@@ -9,10 +9,9 @@ Converting Odds Ratio to Relative Risk with Partial Data Information
 Estimating Relative Risk with Odds Ratio and Partial Data Information
 }
 \usage{
-orsk(x, y, a, al, au, level = 0.95, method = c("optim", "grid"), d=1e-4)
-#\method{plot}{orsk}(x, type=c("or","rr"), ...)
+orsk(x, y, a, al, au, level = 0.95, type="two-sided", method = c("optim", "grid"), d=1e-4)
 \method{print}{orsk}(x, ...)
-\method{summary}{orsk}(object, ...)
+\method{summary}{orsk}(object, nlist=5, ...)
 }
 \arguments{
   \item{x}{
@@ -36,11 +35,14 @@ level of confidence interval with default 95\%
   \item{method}{
 estimation method with default "optim"
 }
-  \item{d}{threshold value for the difference between the estimated odds ratio b and the original \code{a}: abs(b-a)/a <= d. If not satisfied, the results are shown for the top 10 values with the smallest sum of squares.}
+  \item{d}{threshold value to filter out solutions if sum of squares > d. Only used with \code{method="grid"}}
  \item{type}{
-histogram of estimated odds ratio or relative risk }
+type of objective function, the default value is "two-sided"}
  \item{object}{
 object of class \code{orsk}
+}
+ \item{nlist}{
+maximum number of solution shown in summary 
 }
   \item{\dots}{ additional arguments for \code{print, summary}. }
 }
@@ -64,10 +66,14 @@ Zhu Wang
 }
 
 \examples{
-res1 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="optim", d=1.1e-5)
+res1 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="grid")
 summary(res1)
-res2 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="grid", d=1e-7)
+res2 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="optim")
 summary(res2)
+res3 <- orsk(x=2707, y=2610, a=0.37, al=0.30, type="lower", method="grid")
+summary(res3)
+res4 <- orsk(x=2707, y=2610, a=0.37, au=0.46, type="upper", method="grid")
+summary(res4)
 }
 \keyword{ odds ratio }
 \keyword{ relative risk }

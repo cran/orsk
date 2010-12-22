@@ -1,0 +1,4 @@
+                CHANGES in `orsk' VERSION 0.1-2   (2011-12-14)
+
+  o  The method/software now includes least squares for three scenarios called by argument type, and on the log scale of odds ratio and confidence intervals.
+  o  Replacing Fortran subroutine with R function for sorting sum of squares

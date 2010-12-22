@@ -2,15 +2,15 @@ Package: orsk
 Type: Package
 Title: Convertinging Odds Ratio to Relative Risk with Partial Data
         Information
-Version: 0.1-1
+Version: 0.1-2
 Date: 2010-12-22
 Author: Zhu Wang
 Maintainer: Zhu Wang <zwang@ccmckids.org>
-Description: Convertinging Odds Ratio to Relative Risk with Partial
-        Data Information
+Description: Convertinging Odds Ratio to Relative Risk with Partial Data Information
 Depends: BB
+Suggests: setRNG
 License: GPL (>= 2)
 LazyLoad: yes
-Packaged: 2011-07-05 23:04:17 UTC; Zwang
+Packaged: 2012-01-02 20:45:43 UTC; Zwang
 Repository: CRAN
-Date/Publication: 2011-07-06 18:56:41
+Date/Publication: 2012-01-02 20:49:39
