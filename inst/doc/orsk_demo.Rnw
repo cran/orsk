@@ -1,0 +1,227 @@
+\documentclass[nojss]{jss}
+%\documentclass[article, shortnames]{jss}
+%\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{thumbpdf}
+%% need no \usepackage{Sweave.sty}
+%\usepackage{natbib}
+%\usepackage{/usr/lib/R/share/texmf/Sweave}
+%%\VignetteIndexEntry{orsk Illustrations}
+\author{Zhu Wang\\Connecticut Children's Medical Center\\University of Connecticut School of Medicine}
+\title{Converting Odds Ratio to Relative Risk with Partial Data Information}
+
+\Plainauthor{Zhu Wang}
+\Plaintitle{Converting Odds Ratio to Relative Risk with Partial Data Information}
+\Shorttitle{Converting Odds Ratio to Relative Risk}
+\Abstract{
+In medical and epidemiology studies, odds ratio is a commonly applied measure to approximate relative risk. 
+ It is well known such an approximation is poor and can generate misleading conclusions, if the incidence rate of a study outcome is not rare. In the literature, there are times that the incidence rate is not directly available, thus using odds ratio as an approximation of relative risk can lead to potentially questionable conclusions. Motivated by real applications, this paper presents methods to convert odds ratio to relative risk when published data offers some, but limited information. The implemented \proglang{R} package \pkg{orsk} can convert odds ratio to relative risk, if an odds ratio estimate and a confidence interval as well as the total sample sizes of treatment and control group are available. The objective is novelly mapped into a constrained nonlinear optimization problem, which is solved with both nonlinear optimization and grid search algorithm. The package contains \proglang{R} functions which interface underlying \proglang{Fortran} routines for efficiency. A couple of real data applications illustrate the proposed methods and software.
+}
+\Keywords{odds ratio, relative risk, nonlinear optimization, grid search, multiple roots, \proglang{R}}
+\Plainkeywords{odds ratio, relative risk, nonlinear optimization, grid search, multiple roots, R}
+\Address{
+Zhu Wang\\
+Department of Research\\
+Connecticut Children's Medical Center\\
+Department of Pediatrics\\
+University of Connecticut School of Medicine\\
+Connecticut 06106, United States of America\\
+  E-mail: \email{zwang@ccmckids.org}
+}
+
+\begin{document}
+
+\maketitle
+\section{Introduction}
+Investigators of medical and epidemiology studies are often interested in comparing a risk of a binary outcome 
+between a treatment and control group, or between exposed and unexposed. 
+Such an outcome can be an onset of a disease or infection. 
+The odds ratio is a commonly reported measure in these applications. 
+ The odds ratio is a way of comparing whether the probability of a study outcome is the same for two groups.
+ An odds ratio of 1 indicates that the interested outcome is similarly to occur in both groups. An odds ratio greater than 1 indicates that the outcome is more likely to occur in the treatment group. And an odds ratio less than 1 indicates that the outcome is less likely to occur in the treatment group. In medical and epidemiology studies, the relative risk is a more direct measure comparing the risks than the odds ratio. The relative risk is the ratio of the probability of the outcome occurring in the treatment group versus a control group. The relative risk is best estimated using a population sample, but it can be easily shown that the odds ratio is a good approximation to the relative risk when the incidence rate is low, for instance, in rare diseases. However, when the outcome is common in the study population,
+ the odds ratio can largely overestimate the relative risk \citep{Zhang:Yu:1998, Robb:2002}.
+ Although it is well-known that they measure different quantities which are
+only close to each other in case of rare events, the odds ratio has been mis-interpreted as relative risk in some studies, thus led to misleading conclusions 
+when the outcome is not rare \citep{Schu:1999:org,Schw:1999,Holc:2001}. There are methods to adjust the odds ratio when the outcome is not rare. \citet{Zhang:Yu:1998} proposed a method to estimate the relative risk from the odds ratio (also see \citet{Mcnu:2003} for controversial observation). The formula in \citet{Zhang:Yu:1998} requires the proportion of control subjects who experience the outcome. A natural question to ask is: can we estimate the relative risk when such information is not available? The answer is practically important. For instance, due to lack of this information, \citet{Holc:2001} had to ignore some studies: ``Articles in which this information was missing could not be used for risk ratio estimates''. For clarity, a concrete example is presented below. A study evaluates if children with nonperforated appendicitis should receive preoperative, broad-spectrum antibiotics \citep{Lee:2010}, and some of the results are reproduced in Table~\ref{tab:tab1}.  
+
+\begin{table}[ht]
+ \caption{Summary of Cochran Database Review regarding use of antibiotics for nonruptured appendicitis.} % title of Table 
+\centering % used for centering table
+\begin{tabular}{l c c} % centered columns (4 columns)
+\hline\hline %inserts double horizontal lines 
+       & Odds ratio & 95\% confidence interval\\ [0.5ex] % inserts table %heading 
+\hline % inserts single horizontal line 
+Wound infection &  &\\ % inserting body of the table
+\quad Placebo (n=2707) & Reference & Reference\\
+\quad Antibiotics (n=2610) & 0.37  & 0.30-0.46\\
+% [1ex] adds vertical space 
+\hline %inserts single line 
+\end{tabular} 
+\label{tab:tab1} % is used to refer this table in the text 
+\end{table}
+
+Clearly, Table~\ref{tab:tab1} suggests that preoperative antibiotics significantly reduced the risk of wound infection compared to placebo. Since the paper provided no information regarding the incidence rate of wound infection, one would wonder how close the odds ratio approximates the relative risk. In this paper, we develop methods to address this question and implement the methods in \proglang{R} \citep{Rcite} package \pkg{orsk}. 
+
+The paper is organized as follows. Section 2 proposes a nonlinear objective function which measures the closeness between the calculated odds ratio and the reported odds ratio. We also provide two methods to solve the nonlinear objective function. Section 3 outlines the implementations in the package \pkg{orsk}. Section 4 illustrates the capabilities of \pkg{orsk} with real data reported in the literature. Finally, Section 5 concludes the paper.
+\section{Methods}
+\begin{table}[ht]
+ \caption{Compute odds ratio.}  
+\centering 
+\begin{tabular}{l c c c}
+\hline\hline
+Group & Number of outcome & Number of outcome free & Total \\ [0.5ex] % inserts table %heading 
+\hline % inserts single horizontal line 
+Control & $n_{01}$ & $n_{00}$ & $x$ \\ % inserting body of the table
+Treatment & $n_{11}$ & $n_{10}$ & $y$ \\ [1ex]
+\hline %inserts single line 
+\end{tabular} 
+\label{tab:tab2}
+\end{table}
+In Table~\ref{tab:tab2}, the odds of outcome in the treatment group is $n_{11}/n_{10}$ and the odds of outcome in the control group is $n_{01}/n_{00}$, then the odds ratio is
+\begin{equation}\label{eqn:odds}
+\theta=n_{11}n_{00}/n_{10}n_{01}.
+\end{equation}
+ A confidence interval (CI) for the log odds ratio is $\log(\theta) \pm z_{\alpha/2} SE$, where $z_{\alpha/2}$ is the $\alpha/2$ upper  critical value of the standard normal distribution and the standard error SE can be estimated by $SE=\sqrt{1/n_{11} + 1/n_{10} + 1/n_{01} + 1/n_{00}}$.
+The lower bound of odds ratio can be thus 
+ mapped to $\theta_L = \exp(\log(\theta) - z_{\alpha/2}SE)$. Therefore, 
+\begin{equation}\label{eqn:oddsL}
+\theta_L=\theta\exp\left[-z_{\alpha/2}\sqrt{1/n_{11} + 1/n_{10} + 1/n_{01} + 1/n_{00}}\right].
+\end{equation}
+% SE = $\log(\theta_U/\theta)/z_{\alpha/2}$ for the upper bound, or se = $-\log(\theta_L/\theta)/z_{\alpha/2}$ for the lower bound.
+Similarly, the upper bound of odds ratio is
+\begin{equation}\label{eqn:oddsU}
+\theta_U=\theta\exp\left[z_{\alpha/2}\sqrt{1/n_{11} + 1/n_{10} + 1/n_{01} + 1/n_{00}}\right].
+\end{equation}
+
+Suppose $x, y, \theta, \theta_L$ and $\alpha$ are fixed and known, as in Table~\ref{tab:tab1}, 
+the objective is to estimate $(n_{01},n_{11})$ and subsequently estimate the relative risk. If it
+weren't for rounding errors,
+ the task would be equivalent to solving two
+equations (\ref{eqn:odds}) and (\ref{eqn:oddsL}) for two unknowns given that $n_{01}+n_{00}=x$ and $n_{11}+n_{10}=y$. Alternatively, different sets of equations can be solved: equation (\ref{eqn:odds}) and (\ref{eqn:oddsU}), or equation (\ref{eqn:oddsL}) and (\ref{eqn:oddsU}). Although the paper is attempting to recover unpublished information, the problem can be interpreted from a sample size perspective as well. Confidence interval-based sample size determination methods have been proposed in which the upper and lower confidence limits are treated as random variables \citep{cornfield1956statistical, satten1990sample}. Instead, we are seeking sample size requirements for requested odds ratio with fixed confidence limits by solving equation (\ref{eqn:odds}) and (\ref{eqn:oddsL}). Because of rounding errors, the equations do not solve exactly. The paper thus proposals a different approach by choosing $n_{01}$ and $n_{11}$ through minimizing the sum of squared deviations
+between the estimates $\theta$ and $\theta_L$ and the corresponding would-be-estimates based on assumed
+$n_{01}$ and $n_{11}$.                                         
+Specifically, consider a sum of squares $SS$:
+\begin{equation}
+\begin{aligned}
+SS(n_{01},n_{11})=&\left\{n_{11}(y-n_{01})/(x-n_{01})n_{01}-\theta\right\}^2\\
+  &+ \left\{\theta\exp\left[-z_{\alpha/2}\sqrt{1/n_{11} + 1/(y-n_{11}) + 1/n_{01} + 1/(x-n_{01})}\right]-\theta_L\right\}^2,
+\end{aligned}
+\end{equation}
+
+and we aim to solve the following problem:
+
+\begin{equation}
+\begin{aligned}
+\underset{n_{01},n_{11}}
+{\operatorname{min}} SS(n_{01}, n_{11})%\\ 
+                  &\textrm{  for integer } n_{01}, n_{11}, 
+1\leq n_{01}\leq x-1, 1\leq n_{11} \leq y-1.
+\end{aligned}
+\end{equation}
+Alternatively, $SS$ can be defined based on the upper bound $\theta_U$. It is clear that $SS$ will be very close to 0 for the true value of $(n_{01}, n_{11})$ from which $\theta, \theta_L$ are computed. In general, a smaller $SS$ implies a better solution of $(n_{01}, n_{11})$. Thus $SS$ serves similar to the residual sum of squares in the linear regression. To solve the constrained optimization problem, we consider two approaches: the exhaustive grid search and a numerical optimization algorithm. For the grid search method, the minimization can be conducted as a two-way grid search over the choice of $(n_{01}, n_{11})$. In other words, we can evaluate all the values $SS(n_{01}, n_{11})$, 
+ for $n_{01} \in \{1, 2, ..., x-1\}, n_{11} \in \{1, 2, ..., y-1\}$. This will result in total number of $(x-1)(y-1)$ of $SS$. Next, we filter out $SS$ if $SS > \delta$ for a prespecified small threshold value $\delta$. Apparently, a smaller threshold value $\delta$ can lead to sparser solutions; if $\delta$ is too close to zero, however, the algorithm may fail to obtain a solution. The relationship between the choice of $\delta$ and the number of solutions will be investigated below, and it is found in an empirical study that with a few choice of $\delta$, the range of number of solutions can be explored. For each of the selected $(n_{01}, n_{11})$, the relative risk and its confidence interval are computed, along with the odds ratio and its confidence interval. The results are rearranged by the order of $SS$.  
+It is worth emphasizing that the calculated odds ratios are for the scenarios created with different numbers of events in both treatment and control group that lead to comparable results for the reported odds ratio and confidence interval.
+
+The problem can also be solved by applying numerical optimization techniques. Here we consider a spectral projected gradient method implemented in \proglang{R} package \pkg{BB} \citep{Vara:2009}. This package can solve for large scale optimization with simple constraints. It takes a nonlinear objective function as an argument as well as basic constraints. In particular, the package can find multiple roots if available, with user specified multiple starting values. To this end, starting values for $n_{01}$ are randomly generated from 1 to $x-1$. Similarly, starting values for $n_{11}$ are randomly generated from 1 to $y-1$. We then form $\min(x-1, y-1)$ pairs of random numbers and select $10\%$ as the starting values to find multiple roots. The solutions are round to integers and the odds ratios $\hat{\theta}$ are computed afterwards. Next, we adopt a filtering procedure: the solutions are remained only if $|\hat{\theta} - \theta|/\theta \leq \delta$.
+ 
+\section{Implementation}
+The above methods have been implemented in \proglang{R} package \pkg{orsk}. To make the grid search algorithm computational efficient, \proglang{R} package \code{orsk} calls \proglang{Fortran} subroutines. Several supporting \proglang{R} functions are available to extract or calculate useful statistics, such as the reported odds ratio, estimated odds ratio and relative risk, with confidence intervals. The function \code{orsk} returns object of class \code{orsk}, for which \code{print} and \code{summary} method are available. A detailed description of these functions is available in the online help files. With argument \code{method} equal to \code{"grid"}, the grid search algorithm will be called. Otherwise, the constrained nonlinear optimization algorithm will be employed with \code{method="optim"}. The results can be illustrated using \code{summary} function. The source version of \pkg{orsk} package is freely available from the Comprehensive \proglang{R} Archive Network (\url{http://CRAN.R-project.org}). The reader can install the package directly from the \proglang{R} prompt via
+<<echo=false,results=hide>>=
+options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
+@
+<<echo=true,results=hide, eval=FALSE>>=
+install.packages("orsk")
+@
+All analyses presented below are contained in a package vignette. The rendered output of the analyses is available by the \proglang{R}-command
+<<echo=true,results=hide, eval=FALSE>>=
+library("orsk")
+vignette("orsk_demo",package = "orsk")
+@
+To reproduce the analyses, one can invoke the \proglang{R} code 
+<<echo=true,results=hide,eval=FALSE>>=
+edit(vignette("orsk_demo",package = "orsk"))
+@
+\section{Examples}
+The data in Table~\ref{tab:tab1} and in \citet{Berg:1998} are used to illustrate the capabilities of \pkg{orsk}. These analyses were conducted using \proglang{R} version 2.10.1 (2009-12-14) and the
+operating system \code{i686-pc-cygwin}. 
+
+We applied \pkg{orsk} with both optim and grid search methods to Table~\ref{tab:tab1}. 
+As seen below, the output includes $(n_{01},  n_{11})$, named as \code{cont_yes} and \code{trt_yes}, respectively. The results also include the corresponding estimated odds ratio with confidence interval. The estimated numbers are very close to the reported value $0.37$ and its confidence interval $(0.30, 0.46)$. However, the derived relative risks and confidence intervals can be dramatically different. The results show that the estimated relative risks are clustered around $0.40$ or $0.91-0.92$. The confidence intervals can also be roughly clustered into two modes. These two clusters correspond to distinct assumptions: the former is low incidence of wound infection ($n_{01}/x$ and $n_{11}/y$ are small), in which the odds ratio is expected to approximate the relative risk very well; the latter is for common occurrence of wound infection ($n_{01}/x$ and $n_{11}/y$ are large), for which the odds ratio poorly approximates the relative risk. In this context, the latter assumption is not realistic. 
+In general, the decision for an appropriate scenario can be easily made with subject knowledge.
+
+However, the analysis here does provide an example that the odd ratio itself can not provide the complete risk assessment, unlike the relative risk.
+<<echo=true,results=hide>>=
+library("orsk")
+@
+<<echo=true>>=
+### analysis of data in Table 1, upper portion
+res1 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="optim", d=1.1e-5)
+summary(res1)
+res2 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="grid", d=1e-7)
+summary(res2)
+@
+<<echo=FALSE, results=hide>>=
+#compare the computing speed between the two estimating methods. Time to finish the modeling
+time.optim <- system.time(orsk(x=2707, y=2610, a=0.37, al=0.30, au=0.46, method="optim"))[1]
+time.multi <- system.time(orsk(x=2707, y=2610, a=0.37, al=0.30, au=0.46, method="grid", d=1e-7))[1]
+@
+We now compare the computing speed between the two estimating methods. With optim and grid search method in the above specifications, it took \Sexpr{formatC(round(time.optim, 1), digits = 2)} seconds, and \Sexpr{formatC(round(time.multi, 1), digits=2)} seconds, respectively, on an ordinary desktop PC (Intel Core 2 CPU, 1.86 GHz). Although the optimization method has some computation advantage, the grid search method can generate more accurate results since the ratio of $SS$ is less than $0.6\%$ from the corresponding best estimation results for the two methods. 
+
+To study the relationship between the threshold value $\delta$ and the number of solution, we use the same data with varying $\delta$. Figure~\ref{fig:nrt} demonstrates that the number of solution converges to zero very quickly for the optim and grid search method. This implies that one can explore the whole scope of solutions with only a few varying $\delta$. Notice that the horizontal axis has different ranges between the optim and grid search method since the former method can fail with the comparable precision of the latter.    
+\begin{figure}[tbh!]
+\centering
+<<fig=TRUE, echo=false, results=hide, eval=TRUE>>=
+### Figure 1 demonstrates that the number of solution converges to zero very quickly for the optim and grid search method.
+nrt1 <- nrt2 <- NULL
+j1 <- seq(3, 5, by=0.5)
+for(k in j1){
+infe1 <- try(orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="optim", d=10^(-k)))
+nrt1 <- c(nrt1, dim(infe1$res)[1])
+}
+j2 <- seq(5, 7, by=0.5)
+for(k in j2){
+infe2 <- orsk(x=2707, y=2610, a=0.37, al=0.30, au= 0.46, method="grid", d=10^(-k))
+nrt2 <- c(nrt2, dim(infe2$res)[1])
+}
+par(mfrow=c(1,2))
+plot(j1, nrt1, type="l", main="Optim", xlab=expression(-log[10]*delta), ylab="Number of solution", ylim=c(0,250))
+plot(j2, nrt2, type="l", main="Grid", xlab=expression(-log[10]*delta), ylab="Number of solution", ylim=c(0,250))
+@
+\caption{Threshold value and number of solution in optim and grid search method.} 
+\label{fig:nrt}
+\end{figure}
+
+@
+Next, we consider an example in which the numbers of events $(n_{01}, n_{11})$ have been published, which allows a direct comparison between the estimated results with the reported values. 
+In a study of the familial occurrence of dystocia (see Table~\ref{tab:tab3}),
+the authors conclude that ``the risk is increased more than 20-fold (odds ratio 24.0, 95\% interval 1.5 to 794.5) if one twin sister had dystocia...'' \citep{Berg:1998, Holc:2001}. 
+
+\begin{table}[ht]
+ \caption{Dysfunctional labor in primiparous women among 40 female twin couples.}
+\centering % used for centering table
+\begin{tabular}{l c c} % centered columns (4 columns)
+\hline\hline %inserts double horizontal lines 
+       & Odds ratio & 95\% confidence interval\\ [0.5ex] % inserts table %heading 
+\hline % inserts single horizontal line 
+%Familial dystocia &  &\\ % inserting body of the table
+Women whose twin sisters had  & Reference & Reference\\
+\quad a normal delivery (n=36, $n_{01}=4$) &  & \\
+Women whose twin sisters had  & 24  & 1.99-289.6\\
+\quad dystocia (n=4, $n_{11}=3$) &  & \\
+\hline %inserts single line 
+\end{tabular} 
+\label{tab:tab3} % is used to refer this table in the text 
+\end{table}
+Here we used the odds ratio confidence interval (1.99, 289.6) since (1.5, 794.5) is possibly due to an error. The results below suggest that the proposed two methods correctly identify $(n_{01}, n_{11}) = (3, 4)$, and the odds ratio overestimate the relative risk 6.75 since the rate of dystocia was high ($75\%$) in women whose twin sisters had dystocia, as correctly pointed out by \citet{Holc:2001}. 
+<<echo=true>>=
+### analysis of data in Table 3
+res5 <- orsk(x=36, y=4, a=24.0, al=1.99, au= 289.6, method="optim")
+summary(res5)
+res6 <- orsk(x=36, y=4, a=24.0, al=1.99, au= 289.6, method="grid")
+summary(res6)
+@
+\section{Conclusion}
+In this article we have outlined the methods and algorithms for converting the odds ratio to the relative risk when only partial data information is available. As an exploratory tool, \proglang{R} package \pkg{orsk} can be utilized for this purpose. 
+\bibliography{orsk_demo}
+\end{document}

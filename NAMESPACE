@@ -1,0 +1,10 @@
+useDynLib(orsk)
+
+export(orsk, multiStartNew)
+exportClasses("orsk")
+exportMethods("show")
+
+S3method(print, orsk)
+S3method(summary, orsk)
+
+
