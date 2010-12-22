@@ -1,6 +1,6 @@
 useDynLib(orsk)
 
-export(orsk, multiStartNew)
+export(orsk, multiStartNew, zy)
 exportClasses("orsk")
 exportMethods("show")
 

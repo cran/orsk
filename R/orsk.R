@@ -8,43 +8,56 @@
 }
 
 orsk <-
-  function(x, y, a, al, au, level=0.95, type="two-sided", method=c("optim","grid"), d=1e-4){
+  function(nctr, ntrt, a=NA, al=NA, au=NA, level=0.95, type="two-sided", method=c("grid","optim"), d=1e-4){
     call <- match.call()
     method <- match.arg(method)
+    x <- nctr
+    y <- ntrt
     if(x < 0 || y < 0) stop("x and y must be positive integers\n")
-    if(type %in% c("lower", "two-sided")){
-      if(missing(al))
+    if(type =="ci-only"){
+    if(!is.na(a))
+    warning("If type='ci=only', the point estimate of the odds ratio is not utilized\n")
+    a <- NA
+}
+    if(type %in% c("lower", "two-sided","ci-only")){
+      if(is.na(al))
       stop("missing al - lower bound of odds ratio confidence interval\n")
       else if(al < 0)
            stop("odds ratio or confidence intervals must be positive\n")
 }
-    if(type %in% c("upper", "two-sided")){
-      if(missing(au))
+    if(type %in% c("upper", "two-sided", "ci-only")){
+      if(is.na(au))
       stop("missing au - upper bound of odds ratio confidence interval\n")
       else if(au < 0)
            stop("odds ratio or confidence intervals must be positive\n")
 }
-    if(a < 0) stop("odds ratio or confidence intervals must be positive\n")
+    if(!is.na(a))
+     if(a < 0) stop("odds ratio must be positive\n")
     if(level <= 0 || level >= 1) stop("confidence level must be between 0 and 1\n")
     if(method=="optim") d <- "NA   "
     else{
     if(d <= 0) stop("thereshold value must be positive\n")
     else if(d > 1) warning("thereshold value maybe too large\n")
 }
-    if(missing(al)) al <- 0
-    if(missing(au)) au <- 0
+    a1 <- a
+    al1 <- al
+    au1 <- au
+    if(is.na(a)) a1 <- 0
+    if(is.na(al)) al1 <- 0
+    if(is.na(au)) au1 <- 0
     typef <- switch(type,
                  "lower" = 1,
                  "upper" = 2, 
-                 "two-sided" = 3)
+                 "two-sided" = 3,
+                 "ci-only" = 4)
     q <- qnorm(1-(1-level)/2)
     if(method=="grid"){
       z <- .Fortran("oddsratio",
                     x=as.integer(x),
                     y=as.integer(y),
-                    a=as.double(a),
-                    al=as.double(al),
-                    au=as.double(au),
+                    a=as.double(a1),
+                    al=as.double(al1),
+                    au=as.double(au1),
                     q=as.double(q),
                     d=as.double(d),
                     t=as.integer(typef),
@@ -74,10 +87,15 @@ orsk <-
                                         #upper limit= the exponential of (log(Rel risk)+(1.96*SElogR)) 
       rr.lo <- exp(log(rr) - q*slrr)
       rr.up <- exp(log(rr) + q*slrr)
-      res <- cbind(windex[,1], x-windex[,1], windex[,2], y-windex[,2], w2[windex], or.est, res.lo, res.up, rr, rr.lo, rr.up)
+      ctr.risk <- windex[,1]/nctr
+      trt.risk <- windex[,2]/ntrt
+      res <- cbind(ctr_yes=n01,ctr_no=n00, ctr_risk=ctr.risk, trt_yes=n11, trt_no=n10, trt_risk=trt.risk, OR=or.est, OR_lower=res.lo, OR_upper=res.up, RR=rr, RR_lower=rr.lo, RR_upper=rr.up, SS=w2[windex])
 ### sort R^2=w2
-      res <- res[order(res[,5]),]
+      k <- dim(res)[2]
+#      if(sort){
+      res <- res[order(res[,k]),]
       res <- as.data.frame(res)
+#      }
     }
     else{
       fw <- function(p){
@@ -89,7 +107,9 @@ orsk <-
         s <- exp(q*sqrt(1/n11 + 1/n10 + 1/n01 + 1/n00))
         if(n11 <= 0 || n10 <= 0 || n01 <= 0 || n00 <= 0)
           print(c(n11, n10, n01, n00))  
+        if(type!="upper")
         tmp1 <- log(v/s) - log(al)          ### compute confidence interval lower or upper bound
+        if(type!="lower")
         tmp2 <- log(v*s) - log(au)         ### compute confidence interval lower or upper bound
         if(type=="lower")
           return(f^2 + tmp1^2)
@@ -97,6 +117,8 @@ orsk <-
           return(f^2 + tmp2^2)
         else if(type=="two-sided")
           return(f^2 + tmp1^2 + tmp2^2)
+        else if(type=="ci-only")
+          return(tmp1^2 + tmp2^2)
       }
 
       tmp <- 1:max(2, ceiling(0.1*min(x-1, y-1))) # select number of random integer
@@ -107,35 +129,39 @@ orsk <-
       pmat <- pmat[!duplicated(pmat),]
       pmat <- matrix(pmat, ncol=2)
       pmat <- cbind(pmat, apply(pmat, 1, fw))
+#      if(sort){
       ord1 <- order(pmat[, 3])
       ans <- pmat[ord1, ]
+#}
+#       else ans <- pmat
       ans <- matrix(ans, ncol=3)
-#      tmp <- which(ans[,3] <= d)
-#      if(length(tmp) == 0)
-#        stop("Threshold value d=", d, " is too small\n")
       n11 <- ans[,2]; n01 <- ans[,1];
       n10 <- y - n11; n00 <- x - n01;
       or.est <- n11*n00/(n10*n01) ### compare to odds ratio
       s <- exp(q*sqrt (1/n11 + 1/n10 + 1/n01 + 1/n00)) 
-      res.lo <- or.est / s 
-      res.up <- or.est * s
+      OR.lower <- or.est / s 
+      OR.upper <- or.est * s
       rr <- (n11/y)/(n01/x)
       slrr <- sqrt(1/n11-1/y+1/n01-1/x)
                                         #lower limit= the exponential of (log(Rel risk)-(1.96*SElogR))
                                         #upper limit= the exponential of (log(Rel risk)+(1.96*SElogR)) 
       rr.lo <- exp(log(rr) - q*slrr)
       rr.up <- exp(log(rr) + q*slrr)
-      res <- cbind(n01,n00, n11, n10, ans[,3], or.est, res.lo, res.up, rr, rr.lo, rr.up)
+      ctr.risk <- n01/nctr
+      trt.risk <- n11/ntrt
+      res <- cbind(ctr_yes=n01,ctr_no=n00, ctr_risk=ctr.risk, trt_yes=n11, trt_no=n10, trt_risk=trt.risk, OR=or.est, OR_lower=OR.lower, OR_upper=OR.upper, RR=rr, RR_lower=rr.lo, RR_upper=rr.up, SS=ans[,3])
       res <- as.data.frame(res)
-#      res <- as.data.frame(res[tmp,])
     }
-      colnames(res) <- c("ctr_yes","ctr_no","trt_yes","trt_no","SS","OR","OR_lower","OR_upper", "RR", "RR_lower","RR_upper") 
+#      colnames(res) <- c("ctr_yes","ctr_no","ctr_risk","trt_yes","trt_no","trt_risk", "OR","OR_lower","OR_upper", "RR", "RR_lower","RR_upper", "SS") 
+#    if(sort){
     RET <- list(x=x, y=y, a=a, al=al, au=au, type=type, method=method, d=d, res=res) 
     RET$call <- call
     class(RET) <- "orsk"
     return(RET)
-  }
-
+#    }
+#    else 
+#    return(res)
+}
                                         #plot.orsk <- function(x, type=c("or","rr"), ...) {
                                         #  type <- match.arg(type)
                                         #if(type=="rr")
@@ -145,6 +171,8 @@ orsk <-
                                         #}
 
 print.orsk <- function(x, ...) {
+  if(class(x) != "orsk")
+  stop("Not an object of class orsk\n")
   cat("\n")
   cat("\t Converting odds ratio to relative risk\n")
   cat("\n")
@@ -157,8 +185,10 @@ print.orsk <- function(x, ...) {
   invisible(x)
 }
 
-summary.orsk <- function(object, nlist=5, ...) {
+summary.orsk <- function(object, nlist=1:5, ...) {
   x <- object
+  if(class(x) != "orsk")
+  stop("Not an object of class orsk\n")
   cat("\n")
   cat("\t Converting odds ratio to relative risk\n")
   cat("\n")
@@ -166,10 +196,10 @@ summary.orsk <- function(object, nlist=5, ...) {
   print(x$call)
   cat("\n")
   cat("type: ", x$type, "              method: ", x$method, "\n")
-  cat("threshold value: ", x$d, "       maximum number of solution listed: ", nlist, "\n")
-  cat(paste("The reported odds ratio: ",x$a, ", confidence interval ", x$al, ", ", x$au, "\n", sep=""))
-  cat("\nestimated results. The calculated odds ratios and relative risks are for \n the scenarios created with different numbers of events in both control and \n treatment group that lead to comparable results for the reported odds ratio \n and confidence interval.\n")
-  print(x$res[1:nlist,], digits=3)
+  cat("threshold value: ", x$d, "\n")
+  cat(paste("The odds ratio utilized: ",x$a, ", confidence interval utilized: ", x$al, "-", x$au, "\n", sep=""))
+  cat("\n estimated results. The calculated odds ratios and relative risks are for \n the scenarios created with different numbers of events in both control and \n treatment group that lead to comparable results for the reported odds ratio \n and confidence interval.\n")
+  print(x$res[nlist,], digits=3)
   cat("\n")
   invisible(x)
 }

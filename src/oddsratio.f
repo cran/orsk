@@ -18,19 +18,21 @@ c     wind: index corresponding to squared error
             v = dlog(dble(n11*n00)/dble(n10*n01))
             u = (v - dlog(a))**2
             s = q*dsqrt(1.0D0/n11 + 1.0D0/n10 + 1.0D0/n01 + 1.0D0/n00)
-               w(n01, n11) = (v - s - dlog(al))**2
+C               w(n01, n11) = (v - s - dlog(al))**2
             if(t.EQ.1) then
                w(n01, n11) = (v - s - dlog(al))**2
             else
                if(t.EQ.2) then
                   w(n01, n11) = (v + s - dlog(au))**2
                else 
-                  if(t.EQ.3) then        
+                  if(t.EQ.3 .or. t.EQ.4) then        
                      w(n01, n11)=(v-s-dlog(al))**2+(v+s-dlog(au))**2
                   endif
                endif
             endif
+            if(t < 4) then 
             w(n01, n11) = w(n01, n11) + u
+            endif
             if(w(n01, n11) .LE. d)then
                wind(i, 1) = n01
                wind(i, 2) = n11
