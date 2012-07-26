@@ -1,5 +1,5 @@
 multiStartNew <- function (par, fn, gr = NULL, action = c("solve", "optimize"), 
-    method = c(2, 3, 1), control = list(), quiet = FALSE, details = FALSE, 
+    method = c(2, 3, 1), control = list(trace=FALSE), quiet = TRUE, details = FALSE, 
     ...) 
 {
     if (is.null(dim(par))) 
@@ -18,7 +18,7 @@ multiStartNew <- function (par, fn, gr = NULL, action = c("solve", "optimize"),
                 control = control, quiet = quiet, ...), silent = TRUE)
         if (action == "optimize") 
             ans <- try(BBoptim(par[k, ], fn = fn, gr = gr, method = method, 
-                control = control, quiet = TRUE, ...), silent = TRUE)
+                control = control, quiet = quiet, ...), silent = TRUE)
         if (inherits(ans, "try-error")) 
             next
         cvg[k] <- (ans$convergence == 0)

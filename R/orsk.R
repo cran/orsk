@@ -158,17 +158,7 @@ orsk <-
     RET$call <- call
     class(RET) <- "orsk"
     return(RET)
-#    }
-#    else 
-#    return(res)
 }
-                                        #plot.orsk <- function(x, type=c("or","rr"), ...) {
-                                        #  type <- match.arg(type)
-                                        #if(type=="rr")
-                                        #hist(x$RR, xlab="relative risk", main="Histogram of relative risk")
-                                        #else
-                                        #hist(x$OR, xlab="odds ratio", main="Histogram of odds ratio")
-                                        #}
 
 print.orsk <- function(x, ...) {
   if(class(x) != "orsk")
@@ -198,7 +188,7 @@ summary.orsk <- function(object, nlist=1:5, ...) {
   cat("type: ", x$type, "              method: ", x$method, "\n")
   cat("threshold value: ", x$d, "\n")
   cat(paste("The odds ratio utilized: ",x$a, ", confidence interval utilized: ", x$al, "-", x$au, "\n", sep=""))
-  cat("\n estimated results. The calculated odds ratios and relative risks are for \n the scenarios created with different numbers of events in both control and \n treatment group that lead to comparable results for the reported odds ratio \n and confidence interval.\n")
+  cat("\nThe following odds ratios and relative risks are for the scenarios created \nwith different numbers of events in control and treatment group that lead \nto comparable results for the above odds ratio and confidence interval\n")
   print(x$res[nlist,], digits=3)
   cat("\n")
   invisible(x)

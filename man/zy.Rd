@@ -1,10 +1,10 @@
 \name{zy}
 \alias{zy}
 \title{
-Approximate The Relative Risk from the Adjusted Odds Ratio
+Estimating the Relative Risk Based on the Odds Ratio
 }
 \description{
-Estimating relative risk with the adjusted Odds Ratio from multiple logistic regression or other multiple regression models. The method was based on Zhang and Yu (JAMA, 1998)
+Estimating the relative risk based on the (adjusted) Odds Ratio from multiple logistic regression or other multiple regression models. The method was based on Zhang and Yu (JAMA, 1998)
 }
 \usage{
 zy(risk, oddsratio)
@@ -14,17 +14,17 @@ zy(risk, oddsratio)
 the risk rate of having a positive outcome in the control or unexposed group
 }
   \item{oddsratio}{
-odds ratio obtained from multiple logistic regression or other multiple regression models
+odds ratio estimated from multiple logistic regression or other multiple regression models
 }
 }
 \details{
-the approximated relative risk is given by 
+Primarily for the adjusted odds ratio, the estimated relative risk is given by: 
 
 odds ratio / (1 - risk + risk * odds ratio)
 }
 
 \value{
-the approximated relative risk adjusting for the risk rate
+the estimated relative risk 
 }
 \references{
 Zhang J, Yu KF (1998).

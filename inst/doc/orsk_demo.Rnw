@@ -8,15 +8,15 @@
 %\usepackage{/usr/lib/R/share/texmf/Sweave}
 %%\VignetteIndexEntry{orsk Illustrations}
 \author{Zhu Wang\\Connecticut Children's Medical Center\\University of Connecticut School of Medicine}
-\title{Converting the Odds Ratio to the Relative Risk with Partial Data Information}
+\title{Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information}
 
 \Plainauthor{Zhu Wang}
-\Plaintitle{Converting the Odds Ratio to the Relative Risk with Partial Data Information}
+\Plaintitle{Converting the Odds Ratio to the Relative Risk in Cohort Studies with Partial Data Information}
 \Shorttitle{Converting Odds Ratio to Relative Risk}
 \Abstract{
-In medical and epidemiological studies, the odds ratio is a commonly applied measure to approximate the relative risk or risk ratio. 
+In medical and epidemiological studies, the odds ratio is a commonly applied measure to approximate the relative risk or risk ratio in cohort studies. 
  It is well known such an approximation is poor and can generate misleading conclusions, if the incidence rate of a study outcome is not rare. However, there are times when the incidence rate is not directly available in the published work. Motivated by real applications, this paper presents methods to convert the odds ratio to the relative risk when published data offers limited information. Specifically, the proposed new methods can
-convert the odds ratio to the relative risk, if an odds ratio and/or a confidence interval as well as the sample sizes for the treatment and control group are available. In addition, the developed methods can be utilized to approximate the relative risk based on the adjusted odds ratio from logistic regression or other multiple regression models. In this regard, this paper extends a popular method by \citet{Zhang:Yu:1998} for converting odds ratios to risk ratios. The objective is novelly mapped into a constrained nonlinear optimization problem, which is solved with both a grid search and nonlinear optimization algorithm. The methods are implemented in \proglang{R} package \pkg{orsk} which contains \proglang{R} functions and a \proglang{Fortran} subroutine for efficiency. The proposed methods and software are illustrated with real data applications. 
+convert the odds ratio to the relative risk, if an odds ratio and/or a confidence interval as well as the sample sizes for the treatment and control group are available. In addition, the developed methods can be utilized to approximate the relative risk based on the adjusted odds ratio from logistic regression or other multiple regression models. In this regard, this paper extends a popular method by \citet{Zhang:Yu:1998} for converting odds ratios to risk ratios. The objective is novelly mapped into a constrained nonlinear optimization problem, which is solved with both a grid search and nonlinear optimization algorithm. The methods are implemented in \proglang{R} package \pkg{orsk} \citep{orsk:2012} which contains \proglang{R} functions and a \proglang{Fortran} subroutine for efficiency. The proposed methods and software are illustrated with real data applications. 
 }
 \Keywords{odds ratio, relative risk, nonlinear optimization, grid search, multiple roots, \proglang{R}}
 \Plainkeywords{odds ratio, relative risk, nonlinear optimization, grid search, multiple roots, R}
@@ -36,7 +36,7 @@ Connecticut 06106, USA\\
 \section{Introduction}
 Investigators of medical and epidemiological studies are often interested in comparing a risk of a binary outcome 
 between a treatment and control group, or between exposed and unexposed. 
-Such an outcome can be an onset of a disease or a dichotomized length of labor duration.
+Such an outcome can be an onset of a disease or condition.
 \begin{table}[b!]
  \caption{Compute the odds ratio and the relative risk.}  
 \centering 
@@ -44,36 +44,38 @@ Such an outcome can be an onset of a disease or a dichotomized length of labor d
 \hline\hline
 Group & Number of outcome & Number of outcome free & Total \\ [0.5ex] % inserts table %heading 
 \hline % inserts single horizontal line 
-Control & $n_{01}$ & $n_{00}$ & $nctr$ \\ % inserting body of the table
-Treatment & $n_{11}$ & $n_{10}$ & $ntrt$ \\ [1ex]
+Treatment & $n_{11}$ & $n_{10}$ & $ntrt$ \\
+Control & $n_{01}$ & $n_{00}$ & $nctr$ \\ [1ex]% inserting body of the table
 \hline %inserts single line 
 \end{tabular} 
 \label{tab:rr}
 \end{table}
-In this context, the study results may be summarized in Table~\ref{tab:rr} and the odds ratio and the relative risk are the important measures. The odds of outcome in the treatment group is $\frac{n_{11}}{n_{10}}$ and the odds of outcome in the control group is $\frac{n_{01}}{n_{00}}$. The odds ratio is
+In this context, the study results may be summarized in Table~\ref{tab:rr} and the odds ratio and relative risk are the important measures in cohort studies. In a case-control study, the odds ratio is often used as a surrogate for the relative risk. The odds ratio is the ratio of the odds of outcome occurring in the treatment group to the odds of it occurring in the control group. The odds of outcome in the treatment group is $\frac{n_{11}}{n_{10}}$ and the odds of outcome in the control group is $\frac{n_{01}}{n_{00}}$. The odds ratio thus becomes
 \begin{equation}\label{eqn:odds}
-\theta=\frac{n_{11}n_{00}}{n_{10}n_{01}}.
+\theta(n_{01},n_{11})=\frac{n_{11}n_{00}}{n_{10}n_{01}}.
 \end{equation}
 The odds ratio evaluates whether the probability of a study outcome is the same for two groups.
- An odds ratio is a positive number which can be 1 (the outcome of interest is similarly likely to occur in both groups), or greater than 1 (the outcome is more likely to occur in the treatment group), or less than 1 (the outcome is less likely to occur in the treatment group). The odds ratio is to approximate the relative risk or risk ratio, which is a more direct measure than the odds ratio. 
-The risk of the outcome occurring in the treatment group is $\frac{n_{11}}{n_{11}+n_{10}}$ and the risk in the control group is $\frac{n_{01}}{n_{01}+n_{00}}$. The relative risk is the ratio of the probability of the outcome occurring in the treatment group versus a control group, and is naturally estimated by $\frac{n_{11}}{n_{11}+n_{10}}/\frac{n_{01}}{n_{01}+n_{00}}$. 
+ An odds ratio is a positive number which can be 1 (the outcome of interest is similarly likely to occur in both groups), or greater than 1 (the outcome is more likely to occur in the treatment group), or less than 1 (the outcome is less likely to occur in the treatment group). The odds ratio can approximate the relative risk or risk ratio, which is a more direct measure than the odds ratio. In fact, the most direct way to determine if an exposure to a treatment is associated with an outcome is to prospectively follow two groups, and observe the frequency with which each group develops the outcome. The relative risk compares the frequency of an outcome between groups. The risk of the outcome occurring in the treatment group is $\frac{n_{11}}{n_{11}+n_{10}}$ and the risk in the control group is $\frac{n_{01}}{n_{01}+n_{00}}$. The relative risk is the ratio of the probability of the outcome occurring in the treatment group versus a control group, and is naturally estimated by $\frac{n_{11}}{n_{11}+n_{10}}/\frac{n_{01}}{n_{01}+n_{00}}$. 
 It can be easily shown that the odds ratio is a good approximation to the relative risk when the incidence or risk rate is low, for instance, in rare diseases, and can largely overestimate the relative risk
  when the outcome is common in the study population \citep{Zhang:Yu:1998, Robb:2002}.
- Although it is well-known that the two measures evaluate different quantities in general, the odds ratio has been mis-interpreted as the relative risk in some studies, and thus led to incorrect conclusions \citep{Schu:1999:org,Schw:1999,Holc:2001}. For this reason, many methods have been proposed to approximate the risk ratio, particularly in logistic or other multiple regression models. For instance, see a popular method in \citet{Zhang:Yu:1998}. The formula in \citet{Zhang:Yu:1998} requires the proportion of control subjects who experience the outcome. Specifically, derived from the definition of the odds ratio and the relative risk, the approximated risk ratio is $\frac{\text{odds ratio}}{1-\text{risk}_0 + \text{risk}_0\times \text{odds ratio}}$, where risk$_0$ is the risk of having a positive outcome in the control or unexposed group (i.e., risk$_0 = \frac{n_{01}}{nctr}$). Apparently, the formula can convert the unadjusted odds ratio in the layout of Table~\ref{tab:rr}. The formula can also be employed to approximate the lower and upper limits of the confidence interval. However, the above formula becomes unusable if risk$_0$ can't be estimated from the data.
+ Although it is well-known that the two measures evaluate different quantities in general, the odds ratio has been mis-interpreted as the relative risk in some studies, and thus contributed to incorrect conclusions \citep{Schu:1999:org,Schw:1999,Holc:2001}. For this reason, many methods have been proposed to approximate the risk ratio, particularly in logistic or other multiple regression models. For instance, see a popular method in \citet{Zhang:Yu:1998}. The formula in \citet{Zhang:Yu:1998} requires the proportion of control subjects who experience the outcome. Specifically, derived from the definition of the odds ratio and the relative risk, the approximated risk ratio is 
+\begin{equation}\label{eqn:rr}
+\widehat{RR}=\frac{\text{odds ratio}}{1-\text{risk}_0 + \text{risk}_0\times \text{odds ratio}},
+\end{equation}
+ where risk$_0$ is the risk of having a positive outcome in the control or unexposed group (i.e., risk$_0 = \frac{n_{01}}{nctr}$). Formula (\ref{eqn:rr}) can be utilized for both the unadjusted and adjusted odds ratio. The formula can also be employed to approximate the lower and upper limits of the confidence interval. For an interested reader, thus, the formula provides a conversion between the relative ratio and odds ratio from the published data. However, it may not be possible to convert the estimate when risk$_0$ is unknown or cannot be estimated from the data.
 
-This paper extends the work in \citet{Zhang:Yu:1998} to the cases when risk$_0$ can't be estimated trivially, although the proposed methods can be applied to the unadjusted odds ratio as well. The problem under investigation can be described using a concrete example. In a retrospective cohort study, \citet{Szal:1999} collected data on 4237 women who had nulliparous, term vaginal deliveries. Here we focus on the association between the use of epidural anesthesia and prolonged first stage of labor (> 12 hours), and Table~\ref{tab:tab2} and Table~\ref{tab:tab3} were compiled from the study.
- It seems to suggest that the women who used epidural anesthesia had 2.61 times (or 2.25 times, adjusting for other factors) the risk of the first stage of labor lasting > 12 hours than those who didn't use  epidural anesthesia. However, \citet{Szal:1999} didn't describe how many epidural anesthesia users and non-users had the first stage of labor lasting > 12 hours. Thus risk$_0$ is not available in order to approximate the relative risk. 
-If we can reconstruct Table~\ref{tab:rr} based on Table~\ref{tab:tab2}, then it is simple to estimate the risk of the study outcome in the control and treatment groups. Completely or at least partially reconstructing Table~\ref{tab:rr} is practically important not only in Table~\ref{tab:tab2} and Table~\ref{tab:tab3}. For instance, when Holcomb \textit{et al.} assessed 112 clinical research articles in obstetrics and gynecology to determine how often the odds ratio differs substantially from the relative risk estimates, they had to skip five articles due to lack of information on risk of study outcome in the control group, using the formula in \citet{Zhang:Yu:1998}. More importantly, it remains unclear whether the odds ratio exaggerates a risk association or a treatment effect in the skipped studies. Methodologies have not been proposed to estimate risk$_0$ when not all data information is directly available, based on the author's best knowledge. The methods proposed here can reconstruct Table~\ref{tab:rr}, and can not only convert the odds ratio to the relative risk, but can also estimate risk$_0$. In this sense, we extend the work in \citet{Zhang:Yu:1998} to the case where risk$_0$ is not directly available. 
-Table~\ref{tab:tab2} will be utilized in this paper to demonstrate how to approximate the risk ratio based on partial data information. Furthermore, with the estimated risk$_0$ and the multiple logistic regression results in Table~\ref{tab:tab3}, we will approximate the risk ratio based on the adjusted odds ratio.
+To convert the adjusted odds ratio, this paper extends the work in \citet{Zhang:Yu:1998} to the scenario when risk$_0$ cannot be trivially estimated using the published data. In addition, the proposed methods can be applied to the unadjusted odds ratio. The problem under investigation will be described using a concrete example. A retrospective cohort study collected data on 4237 primiparous women \citep{Szal:1999}. Of interest is the association between the use of epidural anesthesia and prolonged first stage of labor (> 12 hours). Often the published results include both unadjusted and adjusted estimates, as in Table~\ref{tab:tab2} and \ref{tab:tab3}, so that readers ``can compare unadjusted measures of association with those adjusted for potential confounders and judge by how much, and in what direction, they changed'' \citep[item 16(a)]{strobe:2007}. Sometimes the results are mis-interpreted in that women who used epidural anesthesia had 2.61 times (or 2.25 times, adjusting for other factors) the risk of the first stage of labor lasting > 12 hours than those who did not use  epidural anesthesia. However, \citet{Szal:1999} did not describe how many epidural anesthesia users and non-users had the first stage of labor lasting > 12 hours. Thus risk$_0$ is not conveniently available to approximate the relative risk. 
+If we can reconstruct Table~\ref{tab:rr} based on Table~\ref{tab:tab2}, then it is possible to estimate the risk of the study outcome in the control and treatment groups. Completely or at least partially reconstructing Table~\ref{tab:rr} is also relevant to other applications. For instance, when Holcomb \textit{et al.} assessed 112 clinical research articles in obstetrics and gynecology to determine how often the odds ratio differs substantially from the relative risk estimates, they had to exclude five articles due to lack of information on risk of study outcome in the control group, using formula (\ref{eqn:rr}). More importantly, it remains unclear how accurate the odds ratios approximate the relative risks in the omitted studies. To the author's knowledge, methodologies have not been proposed to estimate risk$_0$ when not all data information is directly available. The proposed methods can reconstruct Table~\ref{tab:rr}, and consequently estimate risk$_0$. In this sense, we extended the work in \citet{Zhang:Yu:1998} in the event where risk$_0$ is not directly available. 
+Table~\ref{tab:tab2} will be utilized in this paper to demonstrate the approximation of the risk ratio based on partial data information. Furthermore, with the estimated risk$_0$ and the adjusted odds ratio from the multiple logistic regression in Table~\ref{tab:tab3}, we can approximate the risk ratio.
 \begin{table}[h!]
-\caption{Unadjusted odds ratio for the first stage of labor lasting > 12 hours.} 
+\caption{Unadjusted odds ratio for the first stage of labor lasting > 12 hours \citep{Szal:1999}.} 
 \centering % used for centering table
 \begin{tabular}{l c c} % centered columns (4 columns)
 \hline\hline %inserts double horizontal lines 
        & Unadjusted odds ratio & 95\% confidence interval\\ [0.5ex] % inserts table %heading 
 \hline % inserts single horizontal line 
-\quad Non-use of epidural anesthesia (n=1636) & Reference & Reference\\
 \quad Use of epidural anesthesia (n=2601) & 2.61  & 2.25-3.03\\
+\quad Non-use of epidural anesthesia (n=1636) & Reference & Reference\\
 % [1ex] adds vertical space 
 \hline %inserts single line 
 \end{tabular} 
@@ -81,56 +83,56 @@ Table~\ref{tab:tab2} will be utilized in this paper to demonstrate how to approx
 \end{table}
 
 \begin{table}[h!]
-\caption{Adjusted odds ratio from multiple logistic regression for the first stage of labor lasting > 12 hours.} 
+\caption{Adjusted odds ratio from multiple logistic regression for the first stage of labor lasting > 12 hours \citep{Szal:1999}.} 
 \centering % used for centering table
 \begin{tabular}{l c c} % centered columns (4 columns)
 \hline\hline %inserts double horizontal lines 
        & Adjusted Odds ratio & 95\% confidence interval\\ [0.5ex] % inserts table %heading 
 \hline % inserts single horizontal line 
-\quad Non-use of epidural anesthesia (n=1636) & Reference & Reference\\
 \quad Use of epidural anesthesia (n=2601) & 2.25  & 1.92-2.63\\
+\quad Non-use of epidural anesthesia (n=1636) & Reference & Reference\\
 % [1ex] adds vertical space 
 \hline %inserts single line 
 \end{tabular} 
 \label{tab:tab3} % is used to refer this table in the text 
 \end{table}
 
-In this paper, we develop methods to estimate the relative risk with partial data information and implement the methods in \proglang{R} \citep{Rcite} package \pkg{orsk} (\underline{o}dds \underline{r}atio to relative ri\underline{sk}). The paper is organized as follows. Section 2 proposes a nonlinear objective function which measures the closeness between the calculated odds ratio and the reported odds ratio. We also provide two methods to optimize the nonlinear objective function. Section 3 outlines the implementations in the package \pkg{orsk}. Section 4 illustrates the capabilities of \pkg{orsk} with real data in Table~\ref{tab:tab2} and Table~\ref{tab:tab3}. Finally, Section 5 concludes the paper.
+The method developed in this paper is implemented in \proglang{R} \citep{Rcite} package \pkg{orsk} (\underline{o}dds \underline{r}atio to relative ri\underline{sk}). The paper is organized as follows. Section 2 proposes a nonlinear objective function which measures the similarity between the calculated odds ratio and the reported odds ratio. Two methods are proposed to optimize the nonlinear objective function. Section 3 outlines the implementations in the package \pkg{orsk}. Section 4 illustrates the capabilities of \pkg{orsk} with real data provided in Table~\ref{tab:tab2} and \ref{tab:tab3}. Finally, Section 5 concludes the paper.
 \section{Methods}
-We briefly review some additional results of the odds ratio, which form the basis for further proposal development. An asymptotic $(1-\alpha)$ confidence interval (CI) for the log odds ratio is $\log(\theta) \pm z_{\alpha/2} SE$, where $z_{\alpha/2}$ is the $\alpha/2$ upper  critical value of the standard normal distribution and the standard error SE can be estimated by $\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}$.
-The lower bound of the confidence interval of the odds ratio can be calculated by $\theta_L = \exp(\log(\theta) - z_{\alpha/2}SE)$. Therefore, 
+We briefly review some additional results of the odds ratio, which form the basis for the methodology introduced in this section. The \pkg{orsk} procedure relies on the fact that odds ratios have been reported based on the normal approximation, which is the most common practice in many statistical software programs. An asymptotic $(1-\alpha)$ confidence interval (CI) for the log odds ratio is $\log(\theta(n_{01},n_{11})) \pm z_{\alpha/2} SE$, where $z_{\alpha/2}$ is the $\alpha/2$ upper  critical value of the standard normal distribution and the standard error SE can be estimated by $\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}$.
+The lower bound of the confidence interval of the odds ratio can be calculated by $\theta_L(n_{01},n_{11}) = \exp(\log(\theta(n_{01},n_{11})) - z_{\alpha/2}SE)$. Therefore, 
 \begin{equation}\label{eqn:oddsL}
-\theta_L=\theta\exp\left[-z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}\right].
+\theta_L(n_{01},n_{11})=\theta(n_{01},n_{11})\exp\left[-z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}\right].
 \end{equation}
 % SE = $\log(\theta_U/\theta)/z_{\alpha/2}$ for the upper bound, or se = $-\log(\theta_L/\theta)/z_{\alpha/2}$ for the lower bound.
 Similarly, the upper bound of the confidence interval of the odds ratio is
 \begin{equation}\label{eqn:oddsU}
-\theta_U=\theta\exp\left[z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}\right].
+\theta_U(n_{01}, n_{11})=\theta(n_{01},n_{11})\exp\left[z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{n_{10}} + \frac{1}{n_{01}} + \frac{1}{n_{00}}}\right].
 \end{equation}
 
 Now, the problem to be solved can be stated as follows. In the context of Table~\ref{tab:rr}, suppose 
-$\theta^{(0)}, \theta_L^{(0)}, \theta_U^{(0)}$ are calculated by Equations (\ref{eqn:odds}, \ref{eqn:oddsL} and \ref{eqn:oddsU}, respectively. In addition, $nctr, ntrt$, and $\alpha$ are fixed. The aim is to estimate $(n_{01},n_{11})$ and subsequently estimate the relative risk and its corresponding confidence interval. In the layout of Table~\ref{tab:tab2}, we have $nctr=1636, ntrt=2601, \theta^{(0)}=2.61, \theta_L^{(0)}=2.25, \theta_U^{(0)}=3.03, \alpha=0.05.$ 
+$\theta^{(0)}, \theta_L^{(0)}, \theta_U^{(0)}$ are calculated by Equations (\ref{eqn:odds}), (\ref{eqn:oddsL}) and (\ref{eqn:oddsU}), respectively, and $nctr, ntrt$, and $\alpha$ are fixed. The aim is to estimate $(n_{01},n_{11})$ and subsequently estimate the relative risk and its corresponding confidence interval. In the layout of Table~\ref{tab:tab2}, we have $nctr=1636, ntrt=2601, \theta^{(0)}=2.61, \theta_L^{(0)}=2.25, \theta_U^{(0)}=3.03, \alpha=0.05.$ 
 The task is to solve different sets of nonlinear equations for two unknowns $(n_{01}, n_{11})$ given that $n_{01}+n_{00}=nctr$ and $n_{11}+n_{10}=ntrt$: (i) Equations (\ref{eqn:odds}) and (\ref{eqn:oddsL}); (ii) Equations (\ref{eqn:odds}) and (\ref{eqn:oddsU}); 
 (iii) Equations (\ref{eqn:oddsL}) and (\ref{eqn:oddsU}); 
 (iv) Equations (\ref{eqn:odds}) to (\ref{eqn:oddsU}). 
-The proposal is to choose $(n_{01}, n_{11})$ through minimizing the sum of squared logarithmic deviations
+The proposal is to select $(n_{01}, n_{11})$ through minimizing the sum of squared logarithmic deviations
 between the reported estimates $\theta^{(0)}, \theta_L^{(0)}, \theta_U^{(0)}$ and the corresponding would-be-estimates based on assumed
-$n_{01}$ and $n_{11}$. For instance, in scenario (iv), consider a sum of squares $SS$ defined below.
+$n_{01}$ and $n_{11}$. For instance, in scenario (iv), consider a sum of squares $SS$ defined below:
 \begin{equation}\label{eqn:two}
 \begin{aligned}
-SS(n_{01},n_{11})=&\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}-\log(\theta^{(0)})\right\}^2\\
- &+\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}-z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{ntrt-n_{11}} + \frac{1}{n_{01}} + \frac{1}{nctr-n_{01}}}-\log(\theta_L^{(0)})\right\}^2\\
- &+\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}+z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{ntrt-n_{11}} + \frac{1}{n_{01}} + \frac{1}{nctr-n_{01}}}-\log(\theta_U^{(0)})\right\}^2\\
-&\equiv \left\{\log(\theta) - \log(\theta^{(0)})\right\}^2
-  +\left\{\log(\theta_L) - \log(\theta_L^{(0)})\right\}^2
-  +\left\{\log(\theta_U) - \log(\theta_U^{(0)})\right\}^2.
+%SS(n_{01},n_{11})=&\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}-\log(\theta^{(0)})\right\}^2\\
+% &+\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}-z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{ntrt-n_{11}} + \frac{1}{n_{01}} + \frac{1}{nctr-n_{01}}}-\log(\theta_L^{(0)})\right\}^2\\
+% &+\left\{\log\frac{n_{11}(ntrt-n_{01})}{(nctr-n_{01})n_{01}}+z_{\alpha/2}\sqrt{\frac{1}{n_{11}} + \frac{1}{ntrt-n_{11}} + \frac{1}{n_{01}} + \frac{1}{nctr-n_{01}}}-\log(\theta_U^{(0)})\right\}^2\\
+SS(n_{01},n_{11})=&
+ \left\{\log(\theta(n_{01}, n_{11})) - \log(\theta^{(0)})\right\}^2
+  +\left\{\log(\theta_L(n_{01},n_{11}) - \log(\theta_L^{(0)})\right\}^2\\
+  &+\left\{\log(\theta_U(n_{01},n_{11}) - \log(\theta_U^{(0)})\right\}^2.
 \end{aligned}
 \end{equation}
 Similar sums of squares can be considered with point estimate and lower or upper confidence interval bounds, or with confidence interval bounds only. 
-As a reviewer pointed out, it is possible to develop a weighted sum of squares combining the different scenarios, which may help attenuate the impact of rounding errors. This paper  focuses on the basic idea of sum of squares and potential improvements will be employed in the future version of the software.
 The goal now is to solve the following optimization problem:
 
-\begin{equation}
+\begin{equation}\label{eqn:opt}
 \begin{aligned}
 \underset{n_{01},n_{11}}
 {\operatorname{min}} SS(n_{01}, n_{11})%\\ 
@@ -138,17 +140,17 @@ The goal now is to solve the following optimization problem:
 1\leq n_{01}\leq nctr-1, 1\leq n_{11} \leq ntrt-1.
 \end{aligned}
 \end{equation}
-Apparently $SS$ will be very close to 0 for the true value of $(n_{01}, n_{11})$, and a smaller $SS$ implies a better solution. Thus $SS$ plays a role similar to the residual sum of squares in the linear regression. Implementing different objective functions in a variety of scenarios provides a means of cross-checking results. Ideally, the solutions should be robust when minimizing any one of the objective functions. However, sometimes data are corrupted and questionable results may occur. Indeed, an application of different objective functions discovered a suspicious odds ratio and confidence interval in \citet{Lee:2010}, which was formally reported in \citet{Wang:letter:2011}.
+Apparently $SS$ will be very close to 0 for the true value of $(n_{01}, n_{11})$, and a smaller $SS$ implies a better solution. Thus $SS$ plays a role similar to the residual sum of squares in the linear regression. Implementing different objective functions in a variety of scenarios provides a means of cross-checking results. Ideally, the solutions should be insensitive to the choice of the objective function. %However, sometimes data are corrupted and questionable results may occur. Indeed, an application of different objective functions accidentally discovered a suspicious odds ratio and confidence interval in \citet{Lee:2010}, although one can easily find out the error by taking logarithms \citep{Wang:letter:2011}.
 
-To solve the constrained optimization problem, we consider two approaches: the exhaustive grid search and a numerical optimization algorithm. In the first algorithm, the minimization can be performed as a two-way grid search over the choice of $(n_{01}, n_{11})$. In other words, we can evaluate all the values $SS(n_{01}, n_{11})$, 
- for $n_{01} \in \{1, 2, ..., nctr-1\}, n_{11} \in \{1, 2, ..., ntrt-1\}$. This will result in a total number of $(nctr-1)(ntrt-1)$ of $SS$ to be sorted from the smallest to the largest and the computational demand can be high when $(nctr-1)(ntrt-1)$ is large. To make the algorithm more efficient,
-we adopt a filtering procedure. Specifically, we filter out $SS$ if $SS > \delta$ for a prespecified small threshold value $\delta$, with a default value $10^{-4}$. Apparently, a smaller threshold value $\delta$ can lead to sparser solutions; however, the algorithm may fail to obtain a solution if $\delta$ is too close to 0. 
-The problem can also be solved by applying numerical optimization techniques. Here we consider a spectral projected gradient method implemented in \proglang{R} package \pkg{BB} \citep{Vara:2009}. This package can solve for large scale optimization with simple constraints. It takes a nonlinear objective function as an argument as well as basic constraints. In particular, the package can find multiple roots if available, with user specified multiple starting values. To this end, starting values for $n_{01}$ are randomly generated from 1 to $nctr-1$. Similarly, starting values for $n_{11}$ are randomly generated from 1 to $ntrt-1$. We then form $\min(nctr-1, ntrt-1)$ pairs of random numbers and select $10\%$ as the starting values to find multiple roots.
-Once the solutions $(n_{01}, n_{11})$ are determined, the odds ratio and the relative risk can be computed, and selected results can be arranged in the order of the magnitude of $SS$.  
-It is worth emphasizing that the calculated odds ratios are for the scenarios created with different numbers of events in both treatment and control group that lead to comparable results for the reported odds ratio and confidence interval.
+To solve the constrained optimization problem, we consider two approaches: the exhaustive grid search and a numerical optimization algorithm. In the first algorithm, the minimization can be performed as a two-way grid search over the choice of $(n_{01}, n_{11})$. In other words, one can evaluate all the values $SS(n_{01}, n_{11})$, 
+ for $n_{01} \in \{1, 2, ..., nctr-1\}, n_{11} \in \{1, 2, ..., ntrt-1\}$. This will result in a total number of $(nctr-1)(ntrt-1)$ of $SS$ to be sorted from the smallest to the largest; of note, the computational demand can be high when $(nctr-1)(ntrt-1)$ is large. To make the algorithm more efficient,
+we adopt a filtering procedure. Specifically, we filter out $SS$ if $SS > \delta$ for a prespecified small threshold value $\delta$, with a default value $10^{-4}$. As a result, a smaller threshold value $\delta$ can lead to sparser solutions; however, the algorithm may fail to obtain a solution if $\delta$ is too close to 0. 
+The optimization problem (\ref{eqn:opt}) can also be solved by applying numerical techniques. Here we consider a spectral projected gradient method implemented in \proglang{R} package \pkg{BB} \citep{Vara:2009}. This package can solve large scale optimization with simple constraints. It takes a nonlinear objective function as an argument as well as basic constraints. In particular, the package can find multiple roots if available, with user specified multiple starting values. To this end, starting values for $n_{01}$ are randomly generated from 1 to $nctr-1$. Similarly, starting values for $n_{11}$ are randomly generated from 1 to $ntrt-1$. We then form $\min(nctr-1, ntrt-1)$ pairs of random numbers and select $10\%$ as the starting values to find multiple roots.
+Once the solutions $(n_{01}, n_{11})$ are determined, the odds ratio and the relative risk can be computed, and the results are arranged in the order of the magnitude of $SS$.  
  
 \section{Implementation}
-The above methods have been implemented in \proglang{R} package \pkg{orsk}. To make the grid search algorithm computationally efficient, a \proglang{Fortran} subroutine is utilized. Several supporting \proglang{R} functions are available to extract or calculate useful statistics, such as the reported odds ratio, estimated odds ratio and relative risk, with confidence intervals. The function \code{orsk} returns an object of class \code{orsk}, for which \code{print} and \code{summary} method are available. A detailed description of these functions is available in the online help files. Function \code{orsk} has an argument \code{type} which specifies the optimization objective function. With the default value \code{type="two-sided"}, function $SS$ (\ref{eqn:two}) is minimized. Other objective functions based on Equations (\ref{eqn:odds}) and (\ref{eqn:oddsL}), (\ref{eqn:odds}) and (\ref{eqn:oddsU}), (\ref{eqn:oddsL}) and (\ref{eqn:oddsU}) have been implemented with argument \code{type="lower"}, \code{type="upper"} and \code{type="ci-only"}, respectively. The optimization algorithm can be called with argument \code{method}. If \code{method="grid"}, the grid search algorithm is called. Otherwise, the constrained nonlinear optimization algorithm is employed. The estimating results from running function \code{orsk} can be illustrated using the \code{summary} function and argument \code{nlist} controls the maximum number of solutions displayed (the default value is 5). The source version of the \pkg{orsk} package is freely available from the Comprehensive \proglang{R} Archive Network (\url{http://CRAN.R-project.org}). The reader can install the package directly from the \proglang{R} prompt via
+The proposed methods in Section 2 have been implemented in \proglang{R} package \pkg{orsk}\citep{orsk:2012}. 
+The main function \code{orsk} returns an object of class \code{orsk}, for which \code{print} and \code{summary} method are available to extract useful statistics, such as the reported odds ratio, estimated odds ratio and relative risk, with corresponding confidence intervals. Function \code{orsk} has an argument \code{type} which specifies the optimization objective function. With the default value \code{type="two-sided"}, function $SS$ (\ref{eqn:two}) is minimized. Other objective functions based on Equations (\ref{eqn:odds}) and (\ref{eqn:oddsL}), (\ref{eqn:odds}) and (\ref{eqn:oddsU}), (\ref{eqn:oddsL}) and (\ref{eqn:oddsU}) have been implemented with argument \code{type="lower"}, \code{type="upper"} and \code{type="ci-only"}, respectively. The optimization algorithm can be called with argument \code{method}. If \code{method="grid"}, the grid search algorithm in \proglang{Fortran} is called. Otherwise, the constrained nonlinear optimization algorithm in \proglang{R} package \pkg{BB} is employed. The estimating results from function \code{orsk} can be illustrated using the \code{summary} function in which argument \code{nlist} controls the maximum number of solutions displayed (the default value is 5). The source version of the \pkg{orsk} package is freely available from the Comprehensive \proglang{R} Archive Network (\url{http://CRAN.R-project.org}). The reader can install the package directly from the \proglang{R} prompt via
 <<echo=false,results=hide>>=
 options(prompt = "R> ", continue = "+  ", width = 70, useFancyQuotes = FALSE)
 @
@@ -165,46 +167,34 @@ To reproduce the analyses, one can invoke the \proglang{R} code
 edit(vignette("orsk_demo",package = "orsk"))
 @
 \section{Example}
-The data in Table~\ref{tab:tab2} and Table~\ref{tab:tab3} are used to illustrate the capabilities of \pkg{orsk}. These analyses were conducted using \proglang{R} version 2.14.0 (2011-10-31) and the
-operating system \code{i686-pc-linux-gnu (32-bit)}. 
-We applied both grid search and optimization algorithms for minimizing objective function (\ref{eqn:two}) and the solutions are similar for other types of objective function discussed in Section 2. We first apply the \code{orsk} function to the data in Table~\ref{tab:tab2}. As seen below, the output includes two parts: setup and results. The setup describes the configurations of the optimization problem and the results include the solution $n_{01}$ and $n_{11}$, named as \code{ctr_yes} and \code{trt_yes}, respectively. The risk rates in the control group and the treatment group are labeled as \code{ctr_risk} and \code{trt_risk}, respectively. In the ascending order of $SS$, the output also includes the estimated odds ratio with confidence interval derived from the estimate $(n_{01}, n_{11})$, along with the known $nctr$ and $ntrt$. The estimated odds ratios and confidence intervals in the output are very close to the reported values in Table~\ref{tab:tab2}. However, the derived relative risks and confidence intervals are quite different. The results show that the estimated relative risks are $2.02$ or $1.24$. The confidence intervals can be divided into two groups as well. 
+The data in Table~\ref{tab:tab2} and \ref{tab:tab3} are used to illustrate the capabilities of \pkg{orsk}. These analyses were conducted using \proglang{R} version 2.15.1 (2012-06-22). We applied both grid search and optimization algorithms for minimizing objective function (\ref{eqn:two}) and the solutions are similar for other objective functions discussed in Section 2. Table~\ref{tab:tab2} was first evaluated with the \code{orsk} function. As seen below, the output includes two parts: the configurations of the optimization problem and the estimated results. The results include the solution ${n_{01}}$ and $n_{11}$, named as \code{ctr_yes} and \code{trt_yes}, respectively. The risk rates in the control group and the treatment group are labeled as \code{ctr_risk} and \code{trt_risk}, respectively. In the ascending order of $SS$, the output also includes the estimated odds ratio with confidence interval derived from the estimate $(n_{01}, n_{11})$. The estimated odds ratios and confidence intervals in the output are very close to the reported values in Table~\ref{tab:tab2}. However, the derived relative risks and confidence intervals are quite different from the corresponding counterpart of the odds ratios. The results indicate that the estimated relative risks are $2.02$ or $1.24$ and the confidence intervals can be divided into two groups as well. 
 These two groups correspond to different assumptions on the incidence rates:
 \begin{itemize}
-\item Among those who didn't use epidural anesthesia, if about 18\% 
-women had the first stage of labor lasting > 12 hours (i.e., risk$_0$=0.18), and among those who used epidural anesthesia, about 37\% women had the first stage of labor lasting > 12 hours,
-then the relative risk is 2.02 (95\% confidence interval 1.8-2.3). 
-\item On the other hand, if the corresponding risks are increased to 68\% and 85\%, respectively, then the relative risk is 1.24 (95\% confidence interval 1.2-1.3). 
+\item If 18\% non-users of epidural anesthesia had the first stage of labor lasting > 12 hours (i.e., risk$_0$=0.18), and about 37\% users had the first stage of labor lasting > 12 hours,
+then the relative risk is 2.02 (95\% confidence interval 1.8-2.27). 
+\item Alternately, if the corresponding risks are increased to 68\% and 85\%, respectively, then the relative risk is 1.24 (95\% confidence interval 1.2-1.29). 
 \end{itemize}
 <<echo=true,results=hide>>=
 library("orsk")
 @
 <<echo=true>>=
-### analysis of data in Table 2
+### analysis of Table 2 with grid method
 res1 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au= 3.03, method="grid")
 summary(res1)
 @
 
-In either cases, the odds ratio in Table~\ref{tab:tab2} overestimates the relative risk. When the incidence rate is high, the odds ratio poorly approximates the relative risk. The higher the risk, the worse the approximation. One may ask if there are low incidence rates so that the reported odds ratio does approximate the relative risk well. To address this issue, consider those cases in which the incidence of outcome in both the epidural anesthesia users and non-users are within 10\%, leading to reasonable good approximations \citep{Cumm:2009}. However, there is no solution $(n_{01}, n_{11})$ satisfying the constraint  $\frac{n_{01}}{nctr} < 0.1, \frac{n_{11}}{ntrt} < 0.1, |{\theta - 2.61}| < 0.3, |{\theta_L - 2.25}| < 0.3,$ and $|{\theta_U - 3.03}| < 0.3$. To prove this assertion, first, it is simple algebra to show that the constraint implies $|\log(\theta) - \log(2.61)|< -\log(1-0.3/2.61), 
-|\log(\theta_L) - \log(2.25)|< -\log(1-0.3/2.25),
-|\log(\theta_U) - \log(3.03)|< -\log(1-0.3/3.03)$. 
-Thus, the choice of $\delta=(\log(1-0.3/2.61))^2  + (\log(1-0.3/2.25))^2  + (\log(1-0.3/3.03))^2$ can generate results which contain all solutions satisfying the above constraint on the point estimate and its confidence interval. Furthermore, the essentially empty output from the last line in the following code completes the proof of the assertion. Note that this particular $\delta$ is one of the numbers such that the generated results contain all solutions under the constraint. With larger $\delta$, many more solutions are expected and the \code{orsk} function may fail on some systems due to the computing demand. 
- In conclusion, although the incidence rate can't be determined from the published data, there is a clear evidence that the incidence of outcome is above 10\%. Otherwise, the derived odds ratio (and its confidence interval) is different by 0.3 to the counterpart in Table~\ref{tab:tab2}. Because of the high incidence rate, therefore, a correction may be desirable in order to appropriately interpret the magnitude of the reported association \citep{Zhang:Yu:1998}.  
-<<echo=true>>=
-### analysis of data in Table 2
-anes <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au= 3.03, method="grid", d= (log(1-0.3/2.61))^2  + (log(1-0.3/2.25))^2  + (log(1-0.3/3.03))^2)
-tmp <- subset(anes$res, ctr_risk < 0.1 & trt_risk < 0.1 & abs(OR - 2.61) < 0.3 & abs(OR_lower - 2.25) < 0.3 & abs(OR_upper - 3.03) < 0.3)
-tmp
-@
+In either case, the odds ratio in Table~\ref{tab:tab2} overestimates the relative risk, and the displayed incidence rates are high (> $18\%$).
+Since only the five best solutions are shown, one important question remains: are there any less accurate but still acceptable solutions (to be defined in Appendix A) generated in low incidence rates (< $10\%$) scenarios? If the answer is yes, in these low incidence rate scenarios, then the relative risks and odds ratios are very close to each other, and consequently the odd ratio in Table~\ref{tab:tab2} is still a valid approximation to the relative risk. Otherwise, all acceptable solutions are generated from high incidence rate scenarios and poor approximation of the relative risk by the odds ratio can be expected. 
+In order to answer the question, a deeper analysis with \pkg{orsk} is provided in Appendix A. This additional analysis suggests that, although the incidence rate is unknown from the published data, there is a clear evidence that the incidence is high. Consequently, the reported odds ratio in Table~\ref{tab:tab2} can potentially overestimate the true risk ratio. 
  
+Next, utilizing the estimation of risk$_0$ and formula (\ref{eqn:rr}), we approximate the risk ratio based on the adjusted odds ratio in Table~\ref{tab:tab3}. The results can be summarized briefly. Among non-users of epidural anesthesia, if $18\%$ women had the first stage of labor lasting > 12 hours,
+then the approximated risk ratio is 1.84 (95\% confidence interval 1.65-2.03). If risk$_0$ was increased to $68\%$ instead, then the approximated risk ratio is 1.22 (95\% confidence interval 1.18-1.25). Taking into account the incidence rate, we obtained quite different risk ratios compared with Table~\ref{tab:tab3}.  
 
-Next, utilizing the above results on the estimation of risk$_0$, we approximate the risk ratio based on the adjusted odds ratio in Table~\ref{tab:tab3}. If $18\%$ women had the first stage of labor lasting > 12 hours among those who didn't use epidural anesthesia, then the approximated risk ratio is 1.84 (95\% confidence interval 1.65-2.03). If the risk was increased so that risk$_0$ is $68\%$ instead, then the approximated risk ratio is 1.22 (95\% confidence interval 1.18-1.25). Taking into account the incidence rate, we have obtained quite different risk ratios from Table~\ref{tab:tab3}.  
+In the situations under consideration it can be expected that there is often no unique solution. As such, the user should carefully review the results. It may be unclear which of the computational results can be taken for further analysis, but this is not unusual for an exploratory study. Alternately, one may reasonably hope that a subject matter expert can provide valuable insights to the situation and may help make a decision.
 
-In the situations under consideration it can be expected that there is often no unique solution. As such, the user should carefully investigate the results. It can be possible that it is not clear at all which of the computational results can be taken for further analysis. But this is not unusual for an exploratory study. On the other hand, one may reasonably hope that a subject matter expert can provide valuable insights to the situation and may help make a decision.
-
-When applying the numerical optimization algorithm, the estimated results typically have larger $SS$ than the grid search algorithm. Note the solutions may not be replicated if the starting values are generated from different random numbers. In contrast to the grid search algorithm, the estimated relative risks range from 1.40 to 2.19, which doesn't contain value 1.24 as in the grid search algorithm. Apparently, the $SS$ values are larger than the grid search algorithm in the top solutions. This example suggests that the grid search algorithm outperforms the numerical optimization algorithm as one might expect.
+When applying the numerical optimization algorithm, the estimated results typically have larger $SS$ than the grid search algorithm. Note the solutions may not be replicated if the starting values are generated from different random numbers. It was found that the estimated relative risks range from 1.40 to 2.19, which doesn't contain value 1.24 as in the grid search algorithm. Additionally, the displayed $SS$ values in the \pkg{BB} algorithm are larger than those in the grid search algorithm. This example suggests that the grid search algorithm outperforms the numerical optimization algorithm as one might expect.
 <<echo=true>>=
-### analysis of data in Table 2
-# Use a preset seed so test values are reproducible.
+### analysis of Table 2 with optim method
 require("setRNG")
 old.seed <- setRNG(list(kind="Mersenne-Twister", normal.kind="Inversion",
 seed=579))
@@ -217,10 +207,52 @@ summary(res2$res$RR)
 time.optim <- system.time(orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au=3.03, method="optim"))[1]
 time.grid <- system.time(orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au=3.03, method="grid"))[1]
 @
-We now compare the computing speed between the two methods of estimation. With the grid search and optimization algorithm in the above example, it took \Sexpr{formatC(round(time.grid, 1), digits = 2)} and \Sexpr{formatC(round(time.optim, 1), digits=2)} seconds, respectively, on an ordinary desktop PC (Intel Core 2 CPU, 1.86 GHz). Although the optimization method has some computational advantage, the grid search method can generate more accurate results with smaller $SS$ and can detect multiple (local) minima. In the light of the computing time difference, there is no real benefit of using the optimization based method. From the code development perspective, the optimization based method is useful since it provides the solutions to which the grid method can be compared.
+We now compare the computing speed between the two methods of estimation. With the grid search and optimization algorithm in the above example, it took \Sexpr{formatC(round(time.grid, 1), digits = 2)} and \Sexpr{formatC(round(time.optim, 1), digits=2)} seconds, respectively, on an ordinary desktop PC (Intel Core 2 CPU, 1.86 GHz). Although the optimization method has some computational advantage, the grid search method can generate more accurate results with smaller $SS$ and can detect multiple (local) minima. In the light of the computing time difference, there is no real benefit of using the optimization based method. 
         
 \section{Conclusion}
-In this article we have outlined the methods and algorithms for converting the odds ratio to the relative risk when only partial data information is available. As an exploratory tool, \proglang{R} package \pkg{orsk} can be utilized for this purpose. In addition, the methods may be used in the formula in \citet{Zhang:Yu:1998} to approximate the risk ratio obtained from logistic regression or other multiple regression models, when the risk of having a positive outcome in the control or unexposed group is not directly available. Specifically, once the cells in Table~\ref{tab:rr} are reconstructed with the aid of the \code{orsk} function, risk$_0$ can then be estimated.
-Since the \code{orsk} function is based on the asymptotic distribution of the confidence intervals, the results might not be valid in situations of small sample sizes or low event rates. However, one should recognize that this limitation is inherited from the original study.
+In this article we outlined the methods and algorithms for converting the odds ratio to the relative risk when only partial data information is available. As an exploratory tool, \proglang{R} package \pkg{orsk} can be utilized for this purpose. In addition, the methods may be used in the formula in \citet{Zhang:Yu:1998} to approximate the risk ratio obtained from logistic regression or other multiple regression models, when the risk of having a positive outcome in the control or unexposed group is not directly available. Specifically, once the cells in Table~\ref{tab:rr} are reconstructed with the aid of the \code{orsk} function, risk$_0$ can then be estimated.
+Since the \code{orsk} function is based on the asymptotic distribution of the confidence intervals, the validity of results depends on whether the published confidence intervals have or have not been calculated with formulae~(\ref{eqn:oddsL}) and (\ref{eqn:oddsU}). One restriction is that the Zhang and Yu method can only be supported in case unadjusted estimates have been published in parallel to logistic regression estimates.
+
+%\section{Acknowledgment}
+%The author thanks the Associate Editor and two reviewers for their constructive remarks and suggestions, which have greatly improved the article and software. 
+
+\begin{appendix}
+\section{Additional Analysis of Table 2}
+The following analysis it to show that for Table~\ref{tab:tab2},
+there are no good solutions under the low incidence rate assumption. Suppose the incidence of outcome is rare ($ < 10\%$) for the epidural anesthesia users and non-users (this scenario can generate good approximations of relative risks by odds ratios \citep{Cumm:2009}). 
+However, Table~\ref{tab:tab2} doesn't support this assumption. 
+Specifically, no solution $(n_{01}, n_{11})$ satisfies the following closeness criteria 
+\begin{equation}\label{eqn:cr1}
+\begin{aligned} 
+&\frac{n_{01}}{nctr} < 0.1, \frac{n_{11}}{ntrt} < 0.1,\\
+& \left|{\theta(n_{01},n_{11}) - 2.61}\right| < 0.3,\\
+& \left|{\theta_L(n_{01},n_{11}) - 2.25}\right| < 0.3,\\
+& \left|{\theta_U(n_{01},n_{11}) - 3.03}\right| < 0.3.
+\end{aligned}
+\end{equation}
+ To prove this assertion, first, it is simple algebra to show that the above criteria imply 
+\begin{equation}\label{eqn:cr2}
+\begin{aligned} 
+&\frac{n_{01}}{nctr} < 0.1, \frac{n_{11}}{ntrt} < 0.1,\\
+&\left|\log(\theta(n_{01},n_{11})) - \log(2.61)\right|< -\log(1-0.3/2.61),\\ 
+&\left|\log(\theta_L(n_{01},n_{11})) - \log(2.25)\right|< -\log(1-0.3/2.25),\\
+&\left|\log(\theta_U(n_{01},n_{11})) - \log(3.03)\right|< -\log(1-0.3/3.03).
+\end{aligned}
+\end{equation}
+Thus, it is sufficient to choose
+\begin{equation}
+ \delta=(\log(1-0.3/2.61))^2  + (\log(1-0.3/2.25))^2  + (\log(1-0.3/3.03))^2,
+\end{equation}
+ which can generate solutions satisfying the above constraint (\ref{eqn:cr2}). Finding such solutions can be accomplished by the following \proglang{R} code. However, the output of solutions is null. Among all the solutions, thus, none satisfies the closeness criteria (\ref{eqn:cr1}). 
+This completes the proof of the assertion that there are no good solutions under the low incidence rate scenarios. 
+<<echo=true>>=
+### additional analysis of Table 2
+anes <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au= 3.03, method="grid",
+ d= (log(1-0.3/2.61))^2  + (log(1-0.3/2.25))^2  + (log(1-0.3/3.03))^2)
+tmp <- subset(anes$res, ctr_risk < 0.1 & trt_risk < 0.1 & 
+abs(OR - 2.61) < 0.3 & abs(OR_lower - 2.25) < 0.3 & abs(OR_upper - 3.03) < 0.3)
+tmp
+@
+\end{appendix}
 \bibliography{orsk_demo}
 \end{document}

@@ -3,63 +3,64 @@
 \alias{print.orsk}
 \alias{summary.orsk}
 \title{
-Converting Odds Ratio to Relative Risk with Partial Data Information
+Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information
 }
 \description{
-Estimating Relative Risk with Odds Ratio and Partial Data Information
+Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information
 }
 \usage{
-orsk(nctr, ntrt, a=NA, al=NA, au=NA, level = 0.95, type="two-sided", method = c("grid","optim"), d=1e-4)
+orsk(nctr, ntrt, a=NA, al=NA, au=NA, level = 0.95, type="two-sided", 
+method = c("grid","optim"), d=1e-4)
 \method{print}{orsk}(x, ...)
 \method{summary}{orsk}(object, nlist=1:5, ...)
 }
 \arguments{
   \item{nctr}{
-total number in control group
+sample size of control group from a published study
 }
   \item{ntrt}{
-total number in treatment group
+sample size of treatment group from a published study
 }
   \item{a}{
-estimated odds ratio
+estimated odds ratio from a published study
 }
   \item{al}{
-lower bound of confidence interval
+lower bound of confidence interval from a published study
 }
   \item{au}{
-upper bound of confidence interval
+upper bound of confidence interval from a published study
 }
   \item{level}{
 level of confidence interval with default 95\% 
 }
   \item{method}{
-estimation method with default "optim"
+method for converting the odds ratio to the relative risk with default value "grid"
 }
-  \item{d}{threshold value to filter out solutions if sum of squares > d. Only used with \code{method="grid"}}
+  \item{d}{threshold value (delta in the vignette) to filter out solutions if sum of squares > d. Only used with \code{method="grid"}}
  \item{type}{
-type of objective function with the default value "two-sided"}
+type of the objective function with default value "two-sided"}
  \item{x}{
 object of class \code{orsk}
 }
  \item{object}{
 object of class \code{orsk}
 }
- \item{nlist}{
-an index vector indicating the rank of the smallest sum of squares
-}
+ \item{nlist}{ maximum number of solutions displayed }
   \item{\dots}{ additional arguments for \code{print, summary}. }
 }
 
-\details{Given nctr, ntrt, odds ratio, and confidence interval, how to obtain relative risk, when n01, n11, n00 and n10 are not directly available? Here we provide two methods to estimate n01 and n11 (thus n00 and n10 can be derived afterwards), and to estimte relative risk from them. The corresponding odds ratio is also compared to the original odds ratio \code{a}.
-#             disease (yes)   disease (no)   total
-#control         n01              n00        n01+n00=nctr
-#treatment       n11              n10        n11+n10=ntrt
+\details{
+Investigators of medical and epidemiological studies are often interested in comparing a risk of a binary outcome 
+between a treatment and control group, or between exposed and unexposed. 
+Such an outcome can be an onset of a disease or a dichotomized length of labor duration.
+
+From a published study, suppose we are given the information on sample size of control group \code{nctr}, sample size of treatment group \code{ntrt}, estimated odds ratio \code{a}, and confidence interval \code{(al, au)}, how to estimate the relative risk, when the original 2 by 2 contingency table is not directly available? Two methods are proposed to estimate the cells of the contingency table, and to estimate the relative risk. 
 }
 \value{
-An object of class \code{orsk} is returned. The algorithm returns n01, n00, n11, n10, named as ctr_yes, ctr_no, trt_yes, trt_no, respectively. Also the results include the corresponding estimated odds ratio with confidence interval, and relative risk and confidence interval. 
+An object of class \code{orsk} is returned. The algorithm estimates the number of outcome in control group \code{ctr_yes}, number of outcome free in control group \code{ctr_no}, number of outcome in treatment group \code{trt_yes} and number of outcome free in treatment group \code{trt_no}. Also the results include the corresponding estimated odds ratio with confidence interval, and relative risk and confidence interval, based on the estimated contingency table. 
 }
 \references{
-  Lee, S.L., Islam, S., Cassidy, L.D., Abdullah, F., Arca, M.J. (2010). Antibiotics and appendicitis in the pediatric population: An American Pediatric Surgical Association Outcomes and Clinical Trials Committee Systematic Review. \emph{Journal of Pediatric Surgery}, \bold{45}(11):2181--2185. 
+  Wang, Zhu (2012). Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information. Under review.
  
   Morris, J.A. and Gardner, MJ (1988). Calculating confidence intervals for relative risks (odds ratios) and standardised ratios and rates. \emph{British Medical Journal}, \bold{296}(6632): 1313--1316.
 
@@ -77,7 +78,8 @@ res3 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, type="lower", method="grid")
 summary(res3)
 res4 <- orsk(nctr=1636, ntrt=2601, a=2.61, au=3.03, type="upper", method="grid")
 summary(res4)
-res5 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au=3.03, type="ci-only", method="grid")
+res5 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au=3.03, type="ci-only", 
+method="grid")
 summary(res5)
 }
 \keyword{ odds ratio }

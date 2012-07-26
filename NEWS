@@ -4,6 +4,6 @@
   o  Replacing Fortran subroutine with R function for sorting sum of squares
                 
                 CHANGES in `orsk' VERSION 0.1-3   (2012-3-13)
+
   o  Add one more type of objective function 
-  o  Add an argument 'sort' in the orsk function 
   o  Modified vignette file with new data example from a single study
