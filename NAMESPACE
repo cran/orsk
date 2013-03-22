@@ -1,9 +1,16 @@
 useDynLib(orsk)
 
+importFrom("utils", packageDescription)
+
+importFrom("BHH2", "dotPlot")
+importFrom("BB", "BBsolve")
+importFrom("BB", "BBoptim")
+
 export(orsk, multiStartNew, zy)
 exportClasses("orsk")
 exportMethods("show")
 
+S3method(plot, orsk)
 S3method(print, orsk)
 S3method(summary, orsk)
 

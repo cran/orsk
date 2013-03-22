@@ -1,10 +1,12 @@
-.First.lib <- function(lib, pkg)
+#.First.lib <- function(lib, pkg)
+.onLoad <- function(lib, pkg)
 {
   library.dynam("orsk", pkg, lib)
-  vers <- library(help=orsk)$info[[1]]
-  vers <- vers[grep("Version:",vers)]
-  vers <- rev(strsplit(vers," ")[[1]])[1]
-  packageStartupMessage("Loaded orsk",vers, appendLF = FALSE)
+#  vers <- library(help=orsk)$info[[1]]
+#  vers <- vers[grep("Version:",vers)]
+#  vers <- rev(strsplit(vers," ")[[1]])[1]
+#  packageStartupMessage("Loaded orsk",vers, appendLF = FALSE)
+#  packageStartupMessage("Loaded orsk ", as.character(packageDescription("orsk")[["Version"]]),"\n")
 }
 
 orsk <-
@@ -92,10 +94,8 @@ orsk <-
       res <- cbind(ctr_yes=n01,ctr_no=n00, ctr_risk=ctr.risk, trt_yes=n11, trt_no=n10, trt_risk=trt.risk, OR=or.est, OR_lower=res.lo, OR_upper=res.up, RR=rr, RR_lower=rr.lo, RR_upper=rr.up, SS=w2[windex])
 ### sort R^2=w2
       k <- dim(res)[2]
-#      if(sort){
       res <- res[order(res[,k]),]
       res <- as.data.frame(res)
-#      }
     }
     else{
       fw <- function(p){
@@ -129,11 +129,8 @@ orsk <-
       pmat <- pmat[!duplicated(pmat),]
       pmat <- matrix(pmat, ncol=2)
       pmat <- cbind(pmat, apply(pmat, 1, fw))
-#      if(sort){
       ord1 <- order(pmat[, 3])
       ans <- pmat[ord1, ]
-#}
-#       else ans <- pmat
       ans <- matrix(ans, ncol=3)
       n11 <- ans[,2]; n01 <- ans[,1];
       n10 <- y - n11; n00 <- x - n01;
@@ -160,6 +157,32 @@ orsk <-
     return(RET)
 }
 
+plot.orsk <- function(x, type=c("RR", "OR"), digits=2, factor=1, amount=NULL, ...){
+type <- match.arg(type)
+if(type=="OR"){
+xla <- "Risk in the control group"
+yla <- "Risk in the treatment group"
+}
+else {
+xla <- "Relative risk"
+}
+maxdist <- pmax(abs(x$res$OR - x$a),
+abs(x$res$OR_lower - x$al),
+abs(x$res$OR_upper - x$au))
+if(type=="OR"){
+res1 <- x$res$ctr_risk[maxdist <= 10^-digits/2]
+res2 <- x$res$trt_risk[maxdist <= 10^-digits/2]
+if(!is.null(res1) && !is.null(res2))
+plot(jitter(res1, factor=factor, amount=amount), jitter(res2, factor=factor, amount=amount), xlab=xla, ylab=yla)
+else return(warnings("no results for the selected digits\n"))
+}
+else{
+res1 <- x$res$RR[maxdist <= 10^-digits/2]
+if(!is.null(res1))
+dotPlot(res1, xlab=xla)
+else return(warnings("no results for the selected digits\n"))
+}
+}
 print.orsk <- function(x, ...) {
   if(class(x) != "orsk")
   stop("Not an object of class orsk\n")

@@ -1,5 +1,6 @@
 \name{orsk}
 \alias{orsk}
+\alias{plot.orsk}
 \alias{print.orsk}
 \alias{summary.orsk}
 \title{
@@ -11,6 +12,7 @@ Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Infor
 \usage{
 orsk(nctr, ntrt, a=NA, al=NA, au=NA, level = 0.95, type="two-sided", 
 method = c("grid","optim"), d=1e-4)
+\method{plot}{orsk}(x, type=c("RR", "OR"), digits=2, factor=1, amount=NULL, ...)
 \method{print}{orsk}(x, ...)
 \method{summary}{orsk}(object, nlist=1:5, ...)
 }
@@ -38,7 +40,7 @@ method for converting the odds ratio to the relative risk with default value "gr
 }
   \item{d}{threshold value (delta in the vignette) to filter out solutions if sum of squares > d. Only used with \code{method="grid"}}
  \item{type}{
-type of the objective function with default value "two-sided"}
+type of the objective function with default value "two-sided"; or the type of risk to be plotted. For type="RR", distribution of relative risk among scenarios for which the calculated odds ratio and confidence interval coincide with the published values. For type="OR", distribution of risk of the outcome among scenarios for which the calculated odds ratio and confidence interval coincide with the published values.}
  \item{x}{
 object of class \code{orsk}
 }
@@ -46,6 +48,8 @@ object of class \code{orsk}
 object of class \code{orsk}
 }
  \item{nlist}{ maximum number of solutions displayed }
+ \item{digits}{ rounding accuracy for all the numbers given in the published study, with default value 2 }
+ \item{factor, amount}{ arguments for scatter plot, see ?jitter function }
   \item{\dots}{ additional arguments for \code{print, summary}. }
 }
 
