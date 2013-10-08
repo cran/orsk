@@ -1,0 +1,19 @@
+citHeader("To cite <NAME> in publications use:")
+
+citEntry(entry = "Article",
+  title        = "Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information",
+  author       = personList(as.person("Zhu Wang")),
+  journal      = "Journal of Statistical Software",
+  year         = "2013",
+  volume       = "55",
+  number       = "5",
+  pages        = "1--11",
+  url          = "http://www.jstatsoft.org/v55/i05/",
+
+  textVersion  =
+  paste("Zhu Wang (2013).",
+        "Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information.",
+        "Journal of Statistical Software, 55(5), 1-11.",
+        "URL http://www.jstatsoft.org/v55/i05/.")
+)
+

@@ -5,8 +5,9 @@ importFrom("utils", packageDescription)
 importFrom("BHH2", "dotPlot")
 importFrom("BB", "BBsolve")
 importFrom("BB", "BBoptim")
+importFrom("BB", "multiStart")
 
-export(orsk, multiStartNew, zy)
+export(orsk, zy)
 exportClasses("orsk")
 exportMethods("show")
 

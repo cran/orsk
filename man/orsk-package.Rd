@@ -10,8 +10,8 @@ Concertinaing Odds Ratio to Relative Risk in Cohort Studies with Partial Data In
 \tabular{ll}{
 Package: \tab orsk\cr
 Type: \tab Package\cr
-Version: \tab 0.1-4\cr
-Date: \tab 2012-07-26\cr
+Version: \tab 1.0-0\cr
+Date: \tab 2013-10-08\cr
 License: \tab GPL 2.0 or Above\cr
 LazyLoad: \tab yes\cr
 }

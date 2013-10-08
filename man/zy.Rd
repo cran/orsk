@@ -29,7 +29,7 @@ the estimated relative risk
 \references{
 Zhang J, Yu KF (1998).
 What's the relative risk? A method of correcting the odds ratio in cohort studies of common outcomes.
-\emph{JAMA}, \bold{280}(19):1690-1.
+\emph{JAMA}, 280(19), 1690-1.
 }
 \author{
 Zhu Wang

@@ -123,7 +123,10 @@ orsk <-
 
       tmp <- 1:max(2, ceiling(0.1*min(x-1, y-1))) # select number of random integer
       p0 <- cbind(sample(y-1)[tmp], sample(x-1)[tmp])
-      ans <- multiStartNew(par=p0, fn=fw, lower=c(1,1), upper=c(x-1,y-1), action="optimize")
+      sink("/dev/null")
+      ans <- multiStart(par=p0, fn=fw, lower=c(1,1), upper=c(x-1,y-1), action="optimize", control=list(trace=FALSE), quiet=TRUE)
+      sink()
+#      ans <- multiStartNew(par=p0, fn=fw, lower=c(1,1), upper=c(x-1,y-1), action="optimize", control=list(trace=FALSE), quiet=TRUE)
       pmat <- ans$par[ans$conv, ]
       pmat <- round(pmat)
       pmat <- pmat[!duplicated(pmat),]

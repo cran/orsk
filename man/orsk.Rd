@@ -64,9 +64,11 @@ From a published study, suppose we are given the information on sample size of c
 An object of class \code{orsk} is returned. The algorithm estimates the number of outcome in control group \code{ctr_yes}, number of outcome free in control group \code{ctr_no}, number of outcome in treatment group \code{trt_yes} and number of outcome free in treatment group \code{trt_no}. Also the results include the corresponding estimated odds ratio with confidence interval, and relative risk and confidence interval, based on the estimated contingency table. 
 }
 \references{
-  Wang, Zhu (2012). Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information. Under review.
- 
-  Morris, J.A. and Gardner, MJ (1988). Calculating confidence intervals for relative risks (odds ratios) and standardised ratios and rates. \emph{British Medical Journal}, \bold{296}(6632): 1313--1316.
+  Wang, Zhu (2013). 
+  Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information.
+  \emph{Journal of Statistical Software}, 55(5), 1--11. \url{http://www.jstatsoft.org/v55/i05/}.
+
+  Morris, J.A. and Gardner, MJ (1988). Calculating confidence intervals for relative risks (odds ratios) and standardised ratios and rates. \emph{British Medical Journal}, 296(6632), 1313--1316.
 
 }
 \author{
@@ -74,6 +76,7 @@ Zhu Wang
 }
 
 \examples{
+\dontrun{
 res1 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au= 3.03, method="grid")
 summary(res1)
 res2 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au= 3.03, method="optim")
@@ -85,6 +88,7 @@ summary(res4)
 res5 <- orsk(nctr=1636, ntrt=2601, a=2.61, al=2.25, au=3.03, type="ci-only", 
 method="grid")
 summary(res5)
+}
 }
 \keyword{ odds ratio }
 \keyword{ relative risk }
