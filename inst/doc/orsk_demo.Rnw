@@ -1,5 +1,5 @@
-%\documentclass[nojss, shortnames]{jss}
-\documentclass[article, shortnames]{jss}
+\documentclass[nojss, shortnames]{jss}
+%\documentclass[article, shortnames]{jss}
 \usepackage{amsmath}
 \usepackage{amssymb}
 %\usepackage{thumbpdf}
@@ -246,8 +246,8 @@ We now compare the computing speed between the two methods of estimation. With t
 In this article we outlined the methods and algorithms for converting the odds ratio to the relative risk when only partial data information is available. As an exploratory tool, \proglang{R} package \pkg{orsk} can be utilized for this purpose. In addition, the methods may be used in the formula in \citet{Zhang:Yu:1998} to approximate the risk ratio obtained from logistic regression or other multiple regression models, when the risk of having a positive outcome in the control or unexposed group is not directly available. Specifically, once the cells in Table~\ref{tab:rr} are reconstructed with the aid of the \code{orsk} function, risk$_0$ can then be estimated.
 The validity of results depends on whether the published confidence intervals have or have not been calculated with formulae~(\ref{eqn:oddsL}) and (\ref{eqn:oddsU}). One restriction is that the Zhang and Yu method can only be supported in case unadjusted estimates have been published in parallel to logistic regression estimates.
 
-\section{Acknowledgment}
-The author thanks the Associate Editor and two reviewers for their constructive remarks and suggestions, which have greatly improved the article and software. 
+%\section{Acknowledgment}
+%The author thanks the Associate Editor and two reviewers for their constructive remarks and suggestions, which have greatly improved the article and software. 
 
 \bibliography{orsk_demo}
 \end{document}
