@@ -14,5 +14,6 @@ exportMethods("show")
 S3method(plot, orsk)
 S3method(print, orsk)
 S3method(summary, orsk)
-
+importFrom("graphics", "plot")     
+importFrom("stats", "qnorm")
 

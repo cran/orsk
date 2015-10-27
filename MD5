@@ -1,9 +1,9 @@
-2fad1f587c1c80112ee2aeed027c43d0 *DESCRIPTION
-7425295f4ac16c4a3603089fc203c343 *NAMESPACE
+3d912e7a5749972e885141a1f8ca1c3c *DESCRIPTION
+919ce3acb32ecbb3cec9aae95b46c1f9 *NAMESPACE
 30423d6c528104754a2d694792afa9f2 *NEWS
 b053f1b127c0efa020a5e3f04cc0663a *R/orsk.R
 f40a45bd9bf77108433caaae07358c04 *R/zy.R
-f4e20800ffa0820cba6f7962f4455fa1 *build/vignette.rds
+b1c99dc0cd372564d62be8b0f0b6bcd4 *build/vignette.rds
 698f6d2c73efebd9f0af2c3f53ba4fbb *inst/CITATION
 519bcdc0ff05bbf6a0268c584fe818a1 *inst/doc/orsk_demo.R
 9532a80e73d0568a69242b5bea70e42a *inst/doc/orsk_demo.Rnw
