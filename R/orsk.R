@@ -65,7 +65,7 @@ orsk <-
                     t=as.integer(typef),
                     w=as.double(matrix(0, x-1, y-1)),
                     wind=as.integer(matrix(0, nrow=(x-1)*(y-1), ncol=2)),
-                    package="orsk")
+                    PACKAGE="orsk")
       w2 <- matrix(z$w, byrow=FALSE, nrow=x-1, ncol=y-1)
       windex <- matrix(z$wind, byrow=FALSE, nrow=(x-1)*(y-1), ncol=2)
       windex <- subset(windex, windex[,1] > 0)

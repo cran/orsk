@@ -6,4 +6,11 @@
                 CHANGES in `orsk' VERSION 0.1-3   (2012-3-13)
 
   o  Add one more type of objective function 
-  o  Modified vignette file with new data example from a single study
+                
+                CHANGES in `orsk' VERSION 1.0-3   (2017-4-27)
+
+  o  To register native routines and to disable symbol search.
+     $cd orsk
+     $R
+     > tools::package_native_routine_registration_skeleton(".")
+     copy and paste the full output in a packagename_init.c (i.e., orsk_init.c) file to be put in src/
