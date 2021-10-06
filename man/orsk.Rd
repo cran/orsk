@@ -67,7 +67,7 @@ An object of class \code{orsk} is returned. The algorithm estimates the number o
   Wang, Zhu (2013). 
   Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information.
   \emph{Journal of Statistical Software}, 55(5), 1--11. \cr
-  \url{http://www.jstatsoft.org/v55/i05/}.
+  \doi{10.18637/jss.v055.i05}
 
   Morris, J.A. and Gardner, MJ (1988). Calculating confidence intervals for relative risks (odds ratios) and standardised ratios and rates. \emph{British Medical Journal}, 296(6632), 1313--1316.
 

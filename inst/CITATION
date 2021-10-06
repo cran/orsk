@@ -8,12 +8,11 @@ citEntry(entry = "Article",
   volume       = "55",
   number       = "5",
   pages        = "1--11",
-  url          = "http://www.jstatsoft.org/v55/i05/",
+  doi          = "10.18637/jss.v055.i05",
 
   textVersion  =
   paste("Zhu Wang (2013).",
         "Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information.",
         "Journal of Statistical Software, 55(5), 1-11.",
-        "URL http://www.jstatsoft.org/v55/i05/.")
+        "DOI:10.18637/jss.v055.i05.")
 )
-
