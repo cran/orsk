@@ -9,7 +9,7 @@
 %\usepackage{/usr/lib/R/share/texmf/Sweave}
 %%\VignetteIndexEntry{orsk Illustrations}
 \SweaveOpts{keep.source=FALSE}
-\author{Zhu Wang\\UT Health San Antonio}
+\author{Zhu Wang\\University of Tennessee Health Science Center}
 \title{Converting Odds Ratio to Relative Risk in Cohort Studies with Partial Data Information}
 
 \Plainauthor{Zhu Wang}
@@ -24,9 +24,9 @@ convert the odds ratio to the relative risk, if an odds ratio and/or a confidenc
 \Plainkeywords{odds ratio, relative risk, nonlinear optimization, grid search, multiple roots, R}
 \Address{
 Zhu Wang\\
-Department of Epidemiology \& Biostatistics\\
-UT Health San Antonio\\
-  E-mail: \email{wangz1@uthscsa.edu}
+Department of Preventive Medicine\\
+University of Tennessee Health Science Center\\
+  E-mail: \email{zwang145@uthsc.edu}
 }
 
 \begin{document}

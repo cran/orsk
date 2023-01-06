@@ -187,7 +187,7 @@ else return(warnings("no results for the selected digits\n"))
 }
 }
 print.orsk <- function(x, ...) {
-  if(class(x) != "orsk")
+  if(!inherits(x, "orsk"))
   stop("Not an object of class orsk\n")
   cat("\n")
   cat("\t Converting odds ratio to relative risk\n")
@@ -203,7 +203,7 @@ print.orsk <- function(x, ...) {
 
 summary.orsk <- function(object, nlist=1:5, ...) {
   x <- object
-  if(class(x) != "orsk")
+  if(!inherits(x, "orsk"))
   stop("Not an object of class orsk\n")
   cat("\n")
   cat("\t Converting odds ratio to relative risk\n")
