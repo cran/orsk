@@ -8,8 +8,6 @@ importFrom("BB", "BBoptim")
 importFrom("BB", "multiStart")
 
 export(orsk, zy)
-exportClasses("orsk")
-exportMethods("show")
 
 S3method(plot, orsk)
 S3method(print, orsk)
